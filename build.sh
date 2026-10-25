@@ -71,7 +71,6 @@ build_image() {
   local ctx="${WORK}/docker"
   rm -rf "${ctx}"; mkdir -p "${ctx}"
   cp "${HERE}/Dockerfile.armv7" "${ctx}/Dockerfile"
-  cp "${SRC}/utils/dist/patches/go-pr69325-musl-argv.patch" "${ctx}/"
   mkdir -p "${ctx}/go-patches"
   cp "${HERE}"/go/patches/*.patch "${ctx}/go-patches/" 2>/dev/null || true
   docker build --platform "${PLATFORM}" -t "${IMAGE}" \

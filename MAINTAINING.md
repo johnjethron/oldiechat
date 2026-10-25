@@ -10,7 +10,7 @@ publicar una versión y qué hacer cuando algo se rompe.
 | Pieza | Dónde | Respaldo en el repositorio |
 | --- | --- | --- |
 | Alpine (imagen de compilación) | `versions.env` (`ALPINE_IMAGE`, por digest) | — |
-| Go | `versions.env` (`GO_VERSION`, `GO_SHA256`) | parche musl en el código de nchat |
+| Go | `versions.env` (`GO_VERSION`, `GO_SHA256`) | `go/patches/` (parche de musl incluido) |
 | nchat | `versions.env` (`NCHAT_COMMIT`) | `nchat/patches/` y el paquete de código fuente de cada versión |
 | whatsmeow | incluido en nchat; el motor lo fija en `engine/go.mod` | `engine/vendor/`, `nchat/vendor/` |
 | Dependencias Go de nchat | `nchat/vendor/` (`go mod vendor`) | sí |
@@ -71,8 +71,8 @@ hoy funciona. Si una versión nueva de Go falla en el teléfono:
   runtime un respaldo que la use cuando la nueva devuelva `ENOSYS`. Muchas
   partes de Go ya hacen eso.
 - Guarda el cambio como `go/patches/<número>-<descripción>.patch`.
-  `Dockerfile.armv7` aplica todo lo que haya en esa carpeta después del parche
-  de musl (ver `go/patches/README.md`).
+  `Dockerfile.armv7` aplica todo lo que haya en esa carpeta en orden (ver
+  `go/patches/README.md`).
 - Si no tiene arreglo razonable, quédate en la última versión de Go que
   funciona: es lo que fija `GO_VERSION`.
 
@@ -80,12 +80,26 @@ hoy funciona. Si una versión nueva de Go falla en el teléfono:
 
 `scripts/check-go-version.sh` lo avisa con `NUEVO`.
 
-1. Revisa si nchat ya publicó el parche de musl para esa versión de Go
-   (`utils/dist/patches/go-pr69325-musl-argv.patch` en nchat master). Si no,
-   rebasa el parche a mano: son pocas líneas en `runtime`.
-2. Sube `GO_VERSION` y `GO_SHA256` en `versions.env`.
+1. Sube `GO_VERSION` y `GO_SHA256` en `versions.env` (checksum del archivo
+   `linux-armv6l` en `https://go.dev/dl/?mode=json`).
+2. Reaplica el parche de musl (abajo).
 3. Compila y prueba en el teléfono (`scripts/phone-test.sh`) antes de publicar.
 4. Si el Go nuevo falla en el kernel antiguo, aplica la sección anterior.
+
+## Reaplicar el parche de musl
+
+`go/patches/0001-musl-argv-pr69325.patch` (Go PR #69325, aún sin aceptar en
+Go) evita que la parte Go de nchat se caiga al arrancar sobre musl. Lo
+mantenemos nosotros; sin él la terminal no arranca. Al cambiar de versión de Go:
+
+1. Descarga el código: `curl -fsSL https://go.dev/dl/go<versión>.src.tar.gz | tar xz`.
+2. Prueba: `patch -p1 --dry-run -d go < go/patches/0001-musl-argv-pr69325.patch`.
+   Si solo avisa `offset`, no hay que cambiar nada (así entra en Go 1.27.3).
+3. Si un bloque falla: aplícalo sin `--dry-run`, corrige a mano los `.rej` en
+   `go/src/runtime`, y regenera el parche con
+   `diff -ruN go.orig/src go/src` (conserva el encabezado).
+4. Anota en el encabezado del parche sobre qué versión de Go quedó.
+5. Si Go acepta el PR #69325, borra el parche.
 
 **No conviene quedarse en un whatsmeow viejo por mucho tiempo**: el servidor
 rechaza clientes con versiones de protocolo antiguas (nchat lo explica en

@@ -20,20 +20,17 @@ RUN apk add --no-cache \
 
 # Go oficial (binarios estáticos, corren sobre musl) parcheado con Go PR #69325:
 # sin el parche, una c-archive de Go se cae al arrancar en musl (nchat #204).
-# La versión debe coincidir con la del parche (utils/dist/patches/).
 # El tarball "armv6l" es el único de Go para ARM de 32 bits; GOARM=7 genera ARMv7.
 ARG GO_VERSION
 ARG GO_SHA256
-COPY go-pr69325-musl-argv.patch /tmp/go-musl-argv.patch
-# parches propios al runtime de Go (go/patches/, ver MAINTAINING.md)
+# parches al runtime de Go, el de musl incluido (go/patches/, ver MAINTAINING.md)
 COPY go-patches/ /tmp/go-patches/
 RUN set -eu; \
     wget -q "https://go.dev/dl/go${GO_VERSION}.linux-armv6l.tar.gz" -O /tmp/go.tar.gz && \
     echo "${GO_SHA256}  /tmp/go.tar.gz" | sha256sum -c - && \
     tar -C /usr/local -xzf /tmp/go.tar.gz && \
-    patch -p1 -d /usr/local/go < /tmp/go-musl-argv.patch && \
     for p in /tmp/go-patches/*.patch; do [ ! -f "$p" ] || patch -p1 -d /usr/local/go < "$p"; done && \
-    rm -r /tmp/go.tar.gz /tmp/go-musl-argv.patch /tmp/go-patches && \
+    rm -r /tmp/go.tar.gz /tmp/go-patches && \
     /usr/local/go/bin/go version
 ENV PATH=/usr/local/go/bin:${PATH} \
     GOTOOLCHAIN=local \
