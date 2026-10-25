@@ -1,0 +1,225 @@
+diff --git a/src/uiconfig.cpp b/src/uiconfig.cpp
+index 5651cbe7..e0a29905 100644
+--- a/src/uiconfig.cpp
++++ b/src/uiconfig.cpp
+@@ -19,6 +19,7 @@ void UiConfig::Init()
+   const std::map<std::string, std::string> defaultConfig =
+   {
+     { "attachment_indicator", "\xF0\x9F\x93\x8E" },
++    { "archived_list_indicator", "[archived]" },
+     { "attachment_open_command", "" },
+     { "auto_compose_command", "" },
+     { "auto_compose_enabled", "0" },
+diff --git a/src/uikeyconfig.cpp b/src/uikeyconfig.cpp
+index e4d93564..66edcaa1 100644
+--- a/src/uikeyconfig.cpp
++++ b/src/uikeyconfig.cpp
+@@ -232,6 +232,7 @@ void UiKeyConfig::Init(bool p_MapKeys)
+     { "toggle_emoji", "KEY_CTRLY" },
+     { "toggle_help", "KEY_CTRLG" },
+     { "toggle_list", "KEY_CTRLL" },
++    { "toggle_archived", "KEY_NONE" },
+     { "toggle_top", "KEY_NONE" },
+     { "next_chat", "KEY_TAB" },
+     { "prev_chat", "KEY_BTAB" },
+diff --git a/src/uimodel.cpp b/src/uimodel.cpp
+index 28498ca6..548ce984 100644
+--- a/src/uimodel.cpp
++++ b/src/uimodel.cpp
+@@ -146,6 +146,52 @@ void UiModel::Impl::OnKeyToggleList()
+   ReinitView();
+ }
+ 
++void UiModel::Impl::OnKeyToggleArchived()
++{
++  AnyUserKeyInput();
++
++  if (GetEditMessageActive()) return;
++
++  SetShowArchived(!m_ShowArchived);
++}
++
++// The chat list shows either the regular chats or (only) the archived chats
++void UiModel::Impl::SetShowArchived(bool p_ShowArchived)
++{
++  if (m_ShowArchived == p_ShowArchived) return;
++
++  m_ShowArchived = p_ShowArchived;
++  m_ChatVec.clear();
++  m_ChatSet.clear();
++  for (auto& profileChatInfos : m_ChatInfos)
++  {
++    const std::string& profileId = profileChatInfos.first;
++    for (auto& chatInfoPair : profileChatInfos.second)
++    {
++      const ChatInfo& chatInfo = chatInfoPair.second;
++      if (IsChatForceHidden(chatInfo.id) || (chatInfo.isArchived != m_ShowArchived)) continue;
++
++      if (m_ChatSet[profileId].insert(chatInfo.id).second)
++      {
++        m_ChatVec.push_back(std::make_pair(profileId, chatInfo.id));
++      }
++    }
++  }
++
++  SortChats();
++  m_CurrentChatIndex = 0;
++  m_CurrentChat = m_ChatVec.empty() ? s_ChatNone : m_ChatVec.at(0);
++  OnCurrentChatChanged();
++  SetSelectMessageActive(false);
++  UpdateList();
++  UpdateStatus();
++}
++
++bool UiModel::Impl::GetShowArchived()
++{
++  return m_ShowArchived;
++}
++
+ void UiModel::Impl::OnKeyToggleTop()
+ {
+   AnyUserKeyInput();
+@@ -1607,6 +1653,8 @@ std::map<std::string, std::string> UiModel::Impl::ParseMentions(const std::strin
+ 
+ void UiModel::Impl::OpenCreateChat(const std::pair<std::string, std::string>& p_Chat)
+ {
++  SetShowArchived(false);
++
+   std::string profileId = p_Chat.first;
+   std::string userId = p_Chat.second;
+ 
+@@ -1746,7 +1794,7 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+ 
+             m_ChatInfos[profileId][chatInfo.id] = chatInfo;
+ 
+-            if (chatInfo.isArchived)
++            if (chatInfo.isArchived != m_ShowArchived)
+             {
+               // may already be listed, e.g. added by a message received before the chat info
+               if (m_ChatSet[profileId].erase(chatInfo.id) > 0)
+@@ -1782,7 +1830,8 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+           bool hasNewMessage = false;
+           const std::string& chatId = newMessagesNotify->chatId;
+           if (IsChatForceHidden(chatId)) return;
+-          if (m_ChatInfos[profileId].count(chatId) && m_ChatInfos[profileId][chatId].isArchived) return;
++          if (m_ChatInfos[profileId].count(chatId) && m_ChatInfos[profileId][chatId].isArchived &&
++              !m_ShowArchived) return;
+ 
+           std::unordered_map<std::string, ChatMessage>& messages = m_Messages[profileId][chatId];
+           std::vector<std::string>& messageVec = m_MessageVec[profileId][chatId];
+@@ -2210,7 +2259,7 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+         }
+ 
+         m_ChatSet[profileId].erase(chatId);
+-        if (chatInfos[newChatId].isArchived)
++        if (chatInfos[newChatId].isArchived != m_ShowArchived)
+         {
+           // archived chats stay out of the list, also after a lid / phone number id move
+           if (m_ChatSet[profileId].erase(newChatId) > 0)
+@@ -2252,7 +2301,7 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+         {
+           m_CurrentChat.second = newChatId;
+           SetSelectMessageActive(false);
+-          if (chatInfos[newChatId].isArchived)
++          if (chatInfos[newChatId].isArchived != m_ShowArchived)
+           {
+             m_CurrentChat = m_ChatVec.empty() ? s_ChatNone : m_ChatVec.at(0);
+           }
+@@ -2312,7 +2361,7 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+         if (!m_ChatInfos[profileId].count(chatId)) break;
+ 
+         m_ChatInfos[profileId][chatId].isArchived = isArchived;
+-        if (isArchived)
++        if (isArchived != m_ShowArchived)
+         {
+           m_ChatSet[profileId].erase(chatId);
+           m_ChatVec.erase(
+@@ -4667,6 +4716,7 @@ void UiModel::KeyHandler(wint_t p_Key)
+   static wint_t keyGotoChat = UiKeyConfig::GetKey("goto_chat");
+ 
+   static wint_t keyToggleList = UiKeyConfig::GetKey("toggle_list");
++  static wint_t keyToggleArchived = UiKeyConfig::GetKey("toggle_archived");
+   static wint_t keyToggleTop = UiKeyConfig::GetKey("toggle_top");
+   static wint_t keyToggleHelp = UiKeyConfig::GetKey("toggle_help");
+   static wint_t keyToggleEmoji = UiKeyConfig::GetKey("toggle_emoji");
+@@ -4705,6 +4755,11 @@ void UiModel::KeyHandler(wint_t p_Key)
+     std::unique_lock<owned_mutex> lock(m_ModelMutex);
+     GetImpl().OnKeyToggleHelp();
+   }
++  else if (p_Key == keyToggleArchived)
++  {
++    std::unique_lock<owned_mutex> lock(m_ModelMutex);
++    GetImpl().OnKeyToggleArchived();
++  }
+   else if (p_Key == keyToggleList)
+   {
+     std::unique_lock<owned_mutex> lock(m_ModelMutex);
+@@ -5144,6 +5199,12 @@ bool UiModel::GetEmojiEnabledLocked()
+   return GetImpl().GetEmojiEnabled();
+ }
+ 
++bool UiModel::GetShowArchivedLocked()
++{
++  nc_assert(m_ModelMutex.owns_lock());
++  return GetImpl().GetShowArchived();
++}
++
+ int UiModel::GetEntryPosLocked()
+ {
+   nc_assert(m_ModelMutex.owns_lock());
+diff --git a/src/uimodel.h b/src/uimodel.h
+index 78022db7..0a73fbd0 100644
+--- a/src/uimodel.h
++++ b/src/uimodel.h
+@@ -38,6 +38,9 @@ private:
+     void OnKeyIncreaseListWidth();
+     void OnKeyToggleHelp();
+     void OnKeyToggleList();
++    void OnKeyToggleArchived();
++    void SetShowArchived(bool p_ShowArchived);
++    bool GetShowArchived();
+     void OnKeyToggleTop();
+     void OnKeyToggleEmoji();
+     void OnKeySendMsg();
+@@ -237,6 +240,7 @@ private:
+ 
+   private:
+     bool m_Running = true;
++    bool m_ShowArchived = false;
+     int64_t m_MouseResumeTimeMs = 0;
+     std::shared_ptr<UiView> m_View;
+     int m_TermLines = 0;
+@@ -356,6 +360,7 @@ public:
+   std::pair<std::string, std::string>& GetCurrentChatLocked();
+   bool GetEditMessageActiveLocked();
+   bool GetEmojiEnabledLocked();
++  bool GetShowArchivedLocked();
+   int GetEntryPosLocked();
+   std::wstring GetEntryStrLocked();
+   int GetHelpOffsetLocked();
+diff --git a/src/uistatusview.cpp b/src/uistatusview.cpp
+index e1d6acdc..04c97f6b 100644
+--- a/src/uistatusview.cpp
++++ b/src/uistatusview.cpp
+@@ -46,6 +46,12 @@ void UiStatusView::Draw()
+   wattron(m_Win, attribute | colorPair);
+ 
+   std::wstring wstatus;
++  if (m_Model->GetShowArchivedLocked())
++  {
++    static const std::wstring archivedIndicator = StrUtil::ToWString(UiConfig::GetStr("archived_list_indicator"));
++    wstatus = std::wstring(statusVPad, ' ') + archivedIndicator;
++  }
++
+   if (currentChat.first.empty() && currentChat.second.empty())
+   {
+     // Empty status bar until current chat is set
+@@ -55,7 +61,7 @@ void UiStatusView::Draw()
+     std::string profileDisplayName = m_Model->GetProfileSuffixLocked(currentChat.first);
+ 
+     std::string chatStatus = m_Model->GetChatStatusLocked(currentChat.first, currentChat.second);
+-    wstatus = std::wstring(statusVPad, ' ') +
++    wstatus += std::wstring(statusVPad, ' ') +
+       StrUtil::ToWString(name).substr(0, m_W / 2) +
+       StrUtil::ToWString(profileDisplayName) +
+       StrUtil::ToWString(chatStatus);

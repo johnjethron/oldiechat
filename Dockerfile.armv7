@@ -1,0 +1,48 @@
+# Dockerfile.armv7
+#
+# Entorno Alpine armv7 (musl) para compilar nchat totalmente estático.
+# Se ejecuta en un host x86_64 mediante qemu-user-static (--platform linux/arm/v7).
+# Basado en utils/dist/Dockerfile.alpine de nchat, sin xcb (no hay X11 en Android).
+# Imagen de compilación de OldieChat terminal.
+
+FROM alpine:3.24
+
+RUN apk add --no-cache \
+    bash build-base cmake git gperf linux-headers patch pkgconf samurai file \
+    ncurses-dev ncurses-static ncurses-terminfo \
+    sqlite-dev sqlite-static \
+    openssl-dev openssl-libs-static \
+    zlib-dev zlib-static \
+    file-dev libmagic-static \
+    tzdata \
+    python3 py3-fonttools
+
+# Go oficial (binarios estáticos, corren sobre musl) parcheado con Go PR #69325:
+# sin el parche, una c-archive de Go se cae al arrancar en musl (nchat #204).
+# La versión debe coincidir con la del parche (utils/dist/patches/).
+# El tarball "armv6l" es el único de Go para ARM de 32 bits; GOARM=7 genera ARMv7.
+ARG GO_VERSION=1.26.3
+COPY go-pr69325-musl-argv.patch /tmp/go-musl-argv.patch
+RUN set -eu; \
+    wget -q "https://go.dev/dl/go${GO_VERSION}.linux-armv6l.tar.gz" -O /tmp/go.tar.gz && \
+    tar -C /usr/local -xzf /tmp/go.tar.gz && \
+    patch -p1 -d /usr/local/go < /tmp/go-musl-argv.patch && \
+    rm /tmp/go.tar.gz /tmp/go-musl-argv.patch && \
+    /usr/local/go/bin/go version
+ENV PATH=/usr/local/go/bin:${PATH} \
+    GOTOOLCHAIN=local \
+    GOARM=7 \
+    CGO_ENABLED=1
+
+# libopus estático para oldiechat-audio (Alpine solo trae la versión dinámica)
+ARG OPUS_VERSION=1.5.2
+RUN set -eu; \
+    wget -q "https://downloads.xiph.org/releases/opus/opus-${OPUS_VERSION}.tar.gz" -O /tmp/opus.tar.gz && \
+    tar -C /tmp -xzf /tmp/opus.tar.gz && \
+    cd "/tmp/opus-${OPUS_VERSION}" && \
+    ./configure --prefix=/usr/local --disable-shared --enable-static --disable-doc --disable-extra-programs && \
+    make -j"$(nproc)" && make install && \
+    mkdir -p /usr/local/share/doc/opus && cp COPYING /usr/local/share/doc/opus/ && \
+    cd / && rm -rf /tmp/opus*
+
+RUN set -eu; find /usr/lib -name '*.a' -exec strip --strip-debug {} +

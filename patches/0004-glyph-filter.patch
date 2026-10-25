@@ -1,0 +1,286 @@
+diff --git a/lib/ncutil/src/strutil.cpp b/lib/ncutil/src/strutil.cpp
+index a6267bbe..c9865a8f 100644
+--- a/lib/ncutil/src/strutil.cpp
++++ b/lib/ncutil/src/strutil.cpp
+@@ -9,11 +9,14 @@
+ 
+ #include <algorithm>
+ #include <codecvt>
++#include <cstdint>
+ #include <cstring>
+ #include <cwctype>
+ #include <fstream>
+ #include <iostream>
+ #include <locale>
++#include <mutex>
++#include <unordered_map>
+ #include <regex>
+ #include <string>
+ 
+@@ -21,6 +24,7 @@
+ #include <unistd.h>
+ 
+ #include "emojiutil.h"
++#include "fileutil.h"
+ #include "log.h"
+ 
+ void StrUtil::DeleteToNextMatch(std::wstring& p_Str, int& p_Pos, int p_Offs, std::wstring p_Chars)
+@@ -358,6 +362,123 @@ std::string StrUtil::Textize(const std::string& p_Str)
+   return EmojiUtil::Textize(p_Str);
+ }
+ 
++// Display filter for terminals with limited font coverage or outdated character width
++// tables (e.g. Android 4.x terminal apps). Driven by glyphs.txt in the application dir:
++//   A <hex>[-<hex>]  code points the terminal renders, with matching width
++//   R <hex> <text>   replacement for a code point (text may be empty)
++//   E <text>         fallback for other emoji / pictographs
++//   O <text>         fallback for other unsupported code points
++// Without glyphs.txt the string is returned unchanged.
++struct GlyphTable
++{
++  bool loaded = false;
++  std::vector<std::pair<uint32_t, uint32_t>> allowed;
++  std::unordered_map<uint32_t, std::string> replacements;
++  std::string emojiFallback = "[e]";
++  std::string otherFallback = "?";
++};
++
++static const GlyphTable& GetGlyphTable()
++{
++  static GlyphTable table;
++  static std::once_flag once;
++  std::call_once(once, []()
++  {
++    std::ifstream stream(FileUtil::GetApplicationDir() + "/glyphs.txt");
++    if (!stream) return;
++
++    std::string line;
++    while (std::getline(stream, line))
++    {
++      if (line.size() < 2 || line[1] != ' ') continue;
++
++      const char type = line[0];
++      const std::string arg = line.substr(2);
++      if (type == 'A')
++      {
++        const size_t dash = arg.find('-');
++        const uint32_t first = std::stoul(arg.substr(0, dash), nullptr, 16);
++        const uint32_t last = (dash == std::string::npos) ? first : std::stoul(arg.substr(dash + 1), nullptr, 16);
++        table.allowed.push_back(std::make_pair(first, last));
++      }
++      else if (type == 'R')
++      {
++        const size_t space = arg.find(' ');
++        const uint32_t cp = std::stoul(arg.substr(0, space), nullptr, 16);
++        table.replacements[cp] = (space == std::string::npos) ? "" : arg.substr(space + 1);
++      }
++      else if (type == 'E')
++      {
++        table.emojiFallback = arg;
++      }
++      else if (type == 'O')
++      {
++        table.otherFallback = arg;
++      }
++    }
++
++    std::sort(table.allowed.begin(), table.allowed.end());
++    table.loaded = true;
++    LOG_INFO("glyph filter loaded %zu ranges %zu replacements", table.allowed.size(), table.replacements.size());
++  });
++
++  return table;
++}
++
++std::string StrUtil::GlyphFilter(const std::string& p_Str)
++{
++  const GlyphTable& table = GetGlyphTable();
++  if (!table.loaded) return p_Str;
++
++  const std::wstring wstr = ToWString(p_Str);
++  std::wstring out;
++  out.reserve(wstr.size());
++  for (wchar_t wc : wstr)
++  {
++    const uint32_t cp = static_cast<uint32_t>(wc);
++    if (cp < 0xA0)
++    {
++      out.push_back(wc);
++      continue;
++    }
++
++    auto it = std::upper_bound(table.allowed.begin(), table.allowed.end(), std::make_pair(cp, UINT32_MAX));
++    if ((it != table.allowed.begin()) && (cp <= std::prev(it)->second))
++    {
++      out.push_back(wc);
++      continue;
++    }
++
++    auto rit = table.replacements.find(cp);
++    if (rit != table.replacements.end())
++    {
++      out += ToWString(rit->second);
++    }
++    else if (((cp >= 0xFE00) && (cp <= 0xFE0F)) || ((cp >= 0x200B) && (cp <= 0x200F)) ||
++             ((cp >= 0x2060) && (cp <= 0x206F)) || ((cp >= 0x1F3FB) && (cp <= 0x1F3FF)) ||
++             ((cp >= 0xE0000) && (cp <= 0xE007F)) || (cp == 0x20E3))
++    {
++      // zero-width joiners, variation selectors, skin tone modifiers, tags, keycap
++    }
++    else if ((cp >= 0x1F1E6) && (cp <= 0x1F1FF))
++    {
++      // regional indicators (flags) as country code letters
++      out.push_back(L'A' + (cp - 0x1F1E6));
++    }
++    else if (((cp >= 0x1F000) && (cp <= 0x1FAFF)) || ((cp >= 0x2600) && (cp <= 0x27BF)) ||
++             ((cp >= 0x2B00) && (cp <= 0x2BFF)))
++    {
++      out += ToWString(table.emojiFallback);
++    }
++    else
++    {
++      out += ToWString(table.otherFallback);
++    }
++  }
++
++  return ToString(out);
++}
++
+ // Base letter folding table for Latin-1 Supplement (U+00C0 - U+00FF) and Latin Extended-A
+ // (U+0100 - U+017F), mapping each code point to its lowercase ascii base letter(s). Empty
+ // string means the code point is left as-is (the two math symbols in the range). Limited to
+diff --git a/lib/ncutil/src/strutil.h b/lib/ncutil/src/strutil.h
+index 3d6923b7..6bcef67d 100644
+--- a/lib/ncutil/src/strutil.h
++++ b/lib/ncutil/src/strutil.h
+@@ -43,6 +43,7 @@ public:
+   static std::string StrFromOct(const std::string& p_String);
+   static std::string StrToHex(const std::string& p_String);
+   static std::string Textize(const std::string& p_Str);
++  static std::string GlyphFilter(const std::string& p_Str);
+   static std::string ToFold(const std::string& p_Str);
+   static long ToInteger(const std::string& p_Str);
+   static std::string ToLower(const std::string& p_Str);
+diff --git a/src/uichatlistdialog.cpp b/src/uichatlistdialog.cpp
+index e8f62c61..61dba323 100644
+--- a/src/uichatlistdialog.cpp
++++ b/src/uichatlistdialog.cpp
+@@ -78,6 +78,10 @@ void UiChatListDialog::UpdateList()
+       {
+         displayName = StrUtil::Textize(displayName);
+       }
++      else
++      {
++        displayName = StrUtil::GlyphFilter(displayName);
++      }
+ 
+       static const bool developerMode = AppUtil::GetDeveloperMode();
+       if (developerMode)
+diff --git a/src/uicontactlistdialog.cpp b/src/uicontactlistdialog.cpp
+index 515a2689..8bc38fac 100644
+--- a/src/uicontactlistdialog.cpp
++++ b/src/uicontactlistdialog.cpp
+@@ -106,6 +106,10 @@ void UiContactListDialog::UpdateList()
+         {
+           displayName = StrUtil::Textize(displayName);
+         }
++        else
++        {
++          displayName = StrUtil::GlyphFilter(displayName);
++        }
+ 
+         static const bool developerMode = AppUtil::GetDeveloperMode();
+         if (developerMode)
+diff --git a/src/uigroupmemberlistdialog.cpp b/src/uigroupmemberlistdialog.cpp
+index d44b8ef2..78ffa949 100644
+--- a/src/uigroupmemberlistdialog.cpp
++++ b/src/uigroupmemberlistdialog.cpp
+@@ -103,6 +103,10 @@ void UiGroupMemberListDialog::UpdateList()
+       {
+         displayName = StrUtil::Textize(displayName);
+       }
++      else
++      {
++        displayName = StrUtil::GlyphFilter(displayName);
++      }
+ 
+       static const bool developerMode = AppUtil::GetDeveloperMode();
+       if (developerMode)
+diff --git a/src/uihistoryview.cpp b/src/uihistoryview.cpp
+index ef9da404..7f1fecab 100644
+--- a/src/uihistoryview.cpp
++++ b/src/uihistoryview.cpp
+@@ -130,6 +130,10 @@ void UiHistoryView::Draw()
+       {
+         text = StrUtil::Textize(text);
+       }
++      else
++      {
++        text = StrUtil::GlyphFilter(text);
++      }
+ 
+       wlines = StrUtil::WordWrap(StrUtil::ToWString(text), m_PaddedW, false, false, false, 2);
+     }
+@@ -148,6 +152,10 @@ void UiHistoryView::Draw()
+           {
+             quotedText = StrUtil::Textize(quotedText);
+           }
++          else
++          {
++            quotedText = StrUtil::GlyphFilter(quotedText);
++          }
+         }
+         else if (!quotedIt->second.fileInfo.empty())
+         {
+@@ -288,6 +296,10 @@ void UiHistoryView::Draw()
+           {
+             reactionsText = StrUtil::Textize(reactionsText);
+           }
++          else
++          {
++            reactionsText = StrUtil::GlyphFilter(reactionsText);
++          }
+ 
+           const int maxReactionsLen = m_PaddedW - 4;
+           std::wstring reactions = StrUtil::ToWString(reactionsText);
+@@ -387,6 +399,10 @@ void UiHistoryView::Draw()
+     {
+       name = StrUtil::Textize(name);
+     }
++    else
++    {
++      name = StrUtil::GlyphFilter(name);
++    }
+ 
+     std::wstring wsender = StrUtil::ToWString(name);
+     std::wstring wtime;
+diff --git a/src/uilistview.cpp b/src/uilistview.cpp
+index 0efea868..4aef1688 100644
+--- a/src/uilistview.cpp
++++ b/src/uilistview.cpp
+@@ -94,6 +94,10 @@ void UiListView::Draw()
+       {
+         name = StrUtil::Textize(name);
+       }
++      else
++      {
++        name = StrUtil::GlyphFilter(name);
++      }
+ 
+       std::wstring wname = StrUtil::ToWString(name).substr(0, m_PaddedW);
+       wname = StrUtil::TrimPadWString(wname, m_PaddedW);
+diff --git a/src/uistatusview.cpp b/src/uistatusview.cpp
+index 4ffaa593..e1d6acdc 100644
+--- a/src/uistatusview.cpp
++++ b/src/uistatusview.cpp
+@@ -32,6 +32,10 @@ void UiStatusView::Draw()
+   {
+     name = StrUtil::Textize(name);
+   }
++  else
++  {
++    name = StrUtil::GlyphFilter(name);
++  }
+ 
+   int statusVPad = 1;
+   static int colorPair = UiColorConfig::GetColorPair("status_color");

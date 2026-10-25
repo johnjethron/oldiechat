@@ -1,0 +1,51 @@
+diff --git a/src/uimodel.cpp b/src/uimodel.cpp
+index 9f2bba04..28498ca6 100644
+--- a/src/uimodel.cpp
++++ b/src/uimodel.cpp
+@@ -1746,7 +1746,16 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+ 
+             m_ChatInfos[profileId][chatInfo.id] = chatInfo;
+ 
+-            if (chatInfo.isArchived) continue;
++            if (chatInfo.isArchived)
++            {
++              // may already be listed, e.g. added by a message received before the chat info
++              if (m_ChatSet[profileId].erase(chatInfo.id) > 0)
++              {
++                m_ChatVec.erase(std::remove(m_ChatVec.begin(), m_ChatVec.end(),
++                                            std::make_pair(profileId, chatInfo.id)), m_ChatVec.end());
++              }
++              continue;
++            }
+ 
+             if (m_ChatSet[profileId].insert(chatInfo.id).second)
+             {
+@@ -2201,7 +2210,16 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+         }
+ 
+         m_ChatSet[profileId].erase(chatId);
+-        if (m_ChatSet[profileId].insert(newChatId).second)
++        if (chatInfos[newChatId].isArchived)
++        {
++          // archived chats stay out of the list, also after a lid / phone number id move
++          if (m_ChatSet[profileId].erase(newChatId) > 0)
++          {
++            m_ChatVec.erase(std::remove(m_ChatVec.begin(), m_ChatVec.end(),
++                                        std::make_pair(profileId, newChatId)), m_ChatVec.end());
++          }
++        }
++        else if (m_ChatSet[profileId].insert(newChatId).second)
+         {
+           m_ChatVec.push_back(std::make_pair(profileId, newChatId));
+         }
+@@ -2234,6 +2252,10 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+         {
+           m_CurrentChat.second = newChatId;
+           SetSelectMessageActive(false);
++          if (chatInfos[newChatId].isArchived)
++          {
++            m_CurrentChat = m_ChatVec.empty() ? s_ChatNone : m_ChatVec.at(0);
++          }
+         }
+ 
+         SortChats();

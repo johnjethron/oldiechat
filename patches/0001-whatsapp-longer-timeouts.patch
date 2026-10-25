@@ -1,0 +1,22 @@
+diff --git a/lib/wmchat/go/gowm.go b/lib/wmchat/go/gowm.go
+index d2c63495..f88ef38f 100644
+--- a/lib/wmchat/go/gowm.go
++++ b/lib/wmchat/go/gowm.go
+@@ -2748,7 +2748,7 @@ func WmLogin(connId int) int {
+ 
+ 	// authenticate if needed, otherwise just connect
+ 	SetState(connId, Connecting)
+-	var timeoutMs int = 10000 // 10 sec timeout by default (regular connect)
++	var timeoutMs int = 60000 // 60 sec timeout by default (regular connect, slow ARMv7 devices)
+ 
+ 	ch, err := cli.GetQRChannel(context.Background())
+ 	if err != nil {
+@@ -2759,7 +2759,7 @@ func WmLogin(connId int) int {
+ 			SetState(connId, Disconnected)
+ 		}
+ 	} else {
+-		timeoutMs = 60000 // 60 sec timeout during setup / qr code scan
++		timeoutMs = 300000 // 300 sec timeout during setup / qr code scan (slow ARMv7 devices)
+ 		go func() {
+ 			hasGUI := HasGUI()
+ 			usePairingCode := GetConfigOrEnvFlag("USE_PAIRING_CODE")

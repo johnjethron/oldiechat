@@ -1,0 +1,15 @@
+diff --git a/lib/ncutil/src/sysutil.cpp b/lib/ncutil/src/sysutil.cpp
+index a7b5cceb..9df29bdb 100644
+--- a/lib/ncutil/src/sysutil.cpp
++++ b/lib/ncutil/src/sysutil.cpp
+@@ -251,7 +251,9 @@ int SysUtil::System(const std::string& p_Cmd)
+ #if defined(HAVE_TERMUX)
+   static const std::string shPath = "/data/data/com.termux/files/usr/bin/sh";
+ #else
+-  static const std::string shPath = "/bin/sh";
++  // Android has no /bin/sh, only /system/bin/sh
++  static const std::string shPath = (access("/bin/sh", X_OK) != 0) && (access("/system/bin/sh", X_OK) == 0) ?
++    "/system/bin/sh" : "/bin/sh";
+ #endif
+ 
+   // Block SIGCHLD and ignore SIGINT/SIGQUIT in parent per POSIX system() spec

@@ -1,0 +1,209 @@
+diff --git a/src/ui.cpp b/src/ui.cpp
+index bf7098ea..0949d4fd 100644
+--- a/src/ui.cpp
++++ b/src/ui.cpp
+@@ -57,6 +57,12 @@ void Ui::Init()
+   cbreak();
+   UiConfig::GetBool("linefeed_on_enter") ? nl() : nonl();
+   keypad(stdscr, TRUE);
++  if (UiConfig::GetBool("mouse_enabled"))
++  {
++    // tap selects chat in list, tap in entry area hands next tap to terminal (soft keyboard)
++    mousemask(BUTTON1_PRESSED | BUTTON1_CLICKED, nullptr);
++    mouseinterval(0);
++  }
+   curs_set(0);
+   timeout(0);
+   EmojiList::Init();
+diff --git a/src/uiconfig.cpp b/src/uiconfig.cpp
+index a852e2b4..5651cbe7 100644
+--- a/src/uiconfig.cpp
++++ b/src/uiconfig.cpp
+@@ -57,6 +57,7 @@ void UiConfig::Init()
+     { "mark_read_when_inactive", "0" },
+     { "message_edit_command", "" },
+     { "message_open_command", "" },
++    { "mouse_enabled", "0" },
+     { "muted_indicate_unread", "1" },
+     { "muted_notify_unread", "0" },
+     { "muted_position_by_timestamp", "1" },
+diff --git a/src/uilistview.cpp b/src/uilistview.cpp
+index e3a91601..0efea868 100644
+--- a/src/uilistview.cpp
++++ b/src/uilistview.cpp
+@@ -78,6 +78,8 @@ void UiListView::Draw()
+     int count = names.size();
+     int offset = std::min(std::max(0, index - ((height - 1) / 2)), std::max(0, count - height));
+     int last = std::min((height + offset), count);
++    m_Offset = offset;
++    m_Count = count;
+     for (int i = offset; i < last; ++i)
+     {
+       if (i == index)
+@@ -123,3 +125,15 @@ void UiListView::Draw()
+   wattroff(m_PaddedWin, attribute | colorPair);
+   wrefresh(m_PaddedWin);
+ }
++
++int UiListView::GetChatIndexAt(int p_ScreenX, int p_ScreenY)
++{
++  if (!m_Enabled || (m_PaddedWin == nullptr)) return -1;
++
++  int row = p_ScreenY - (m_Y + 1);
++  int col = p_ScreenX - (m_X + 1);
++  if ((row < 0) || (row >= m_PaddedH) || (col < 0) || (col >= m_PaddedW)) return -1;
++
++  int index = m_Offset + row;
++  return (index < m_Count) ? index : -1;
++}
+diff --git a/src/uilistview.h b/src/uilistview.h
+index e00eeae0..e4760076 100644
+--- a/src/uilistview.h
++++ b/src/uilistview.h
+@@ -18,9 +18,12 @@ public:
+   virtual ~UiListView();
+ 
+   virtual void Draw();
++  int GetChatIndexAt(int p_ScreenX, int p_ScreenY);
+ 
+ private:
+   WINDOW* m_PaddedWin = nullptr;
+   int m_PaddedH = 0;
+   int m_PaddedW = 0;
++  int m_Offset = 0;
++  int m_Count = 0;
+ };
+diff --git a/src/uimodel.cpp b/src/uimodel.cpp
+index d40b779d..9f2bba04 100644
+--- a/src/uimodel.cpp
++++ b/src/uimodel.cpp
+@@ -583,6 +583,36 @@ void UiModel::Impl::OnKeyPrevChat()
+   SetSelectMessageActive(false);
+ }
+ 
++void UiModel::Impl::OnKeyMouse()
++{
++  MEVENT event;
++  if (getmouse(&event) != OK) return;
++
++  if (!(event.bstate & (BUTTON1_PRESSED | BUTTON1_CLICKED))) return;
++
++  AnyUserKeyInput();
++
++  if (m_View->IsEntryAt(event.x, event.y))
++  {
++    // Terminals such as TermOne Plus only toggle the soft keyboard on tap when
++    // mouse tracking is off, so disable it briefly to let the next tap through.
++    mousemask(0, nullptr);
++    doupdate();
++    m_MouseResumeTimeMs = TimeUtil::GetCurrentTimeMSec() + 3000;
++    return;
++  }
++
++  if (GetEditMessageActive()) return;
++
++  int index = m_View->GetListChatIndexAt(event.x, event.y);
++  if ((index < 0) || (index >= (int)m_ChatVec.size()) || (index == m_CurrentChatIndex)) return;
++
++  m_CurrentChatIndex = index;
++  m_CurrentChat = m_ChatVec.at(m_CurrentChatIndex);
++  OnCurrentChatChanged();
++  SetSelectMessageActive(false);
++}
++
+ void UiModel::Impl::OnKeyUnreadChat()
+ {
+   AnyUserKeyInput();
+@@ -2434,6 +2464,13 @@ bool UiModel::Impl::Process()
+ 
+   ProcessTimers();
+ 
++  if ((m_MouseResumeTimeMs != 0) && (TimeUtil::GetCurrentTimeMSec() >= m_MouseResumeTimeMs))
++  {
++    m_MouseResumeTimeMs = 0;
++    mousemask(BUTTON1_PRESSED | BUTTON1_CLICKED, nullptr);
++    doupdate();
++  }
++
+   SetTyping("", "", false);
+   m_View->Draw();
+   return m_Running;
+@@ -4572,6 +4609,7 @@ void UiModel::KeyHandler(wint_t p_Key)
+ 
+   static wint_t keySendMsg = UiKeyConfig::GetKey("send_msg");
+   static wint_t keyNextChat = UiKeyConfig::GetKey("next_chat");
++  static wint_t keyMouse = UiKeyConfig::GetOffsettedKeyCode(KEY_MOUSE, true);
+   static wint_t keyPrevChat = UiKeyConfig::GetKey("prev_chat");
+   static wint_t keyUnreadChat = UiKeyConfig::GetKey("unread_chat");
+ 
+@@ -4665,6 +4703,11 @@ void UiModel::KeyHandler(wint_t p_Key)
+     std::unique_lock<owned_mutex> lock(m_ModelMutex);
+     GetImpl().OnKeyNextChat();
+   }
++  else if (p_Key == keyMouse)
++  {
++    std::unique_lock<owned_mutex> lock(m_ModelMutex);
++    GetImpl().OnKeyMouse();
++  }
+   else if (p_Key == keyPrevChat)
+   {
+     std::unique_lock<owned_mutex> lock(m_ModelMutex);
+diff --git a/src/uimodel.h b/src/uimodel.h
+index 4782732f..78022db7 100644
+--- a/src/uimodel.h
++++ b/src/uimodel.h
+@@ -48,6 +48,7 @@ private:
+ 
+     void OnKeyNextChat();
+     void OnKeyPrevChat();
++    void OnKeyMouse();
+     void OnKeyUnreadChat();
+     void OnKeyPrevPage();
+     void OnKeyNextPage();
+@@ -236,6 +237,7 @@ private:
+ 
+   private:
+     bool m_Running = true;
++    int64_t m_MouseResumeTimeMs = 0;
+     std::shared_ptr<UiView> m_View;
+     int m_TermLines = 0;
+     int m_TermCols = 0;
+diff --git a/src/uiview.cpp b/src/uiview.cpp
+index 786c010c..6d44c4d7 100644
+--- a/src/uiview.cpp
++++ b/src/uiview.cpp
+@@ -170,6 +170,21 @@ bool UiView::GetListEnabled()
+   return m_ListEnabled;
+ }
+ 
++int UiView::GetListChatIndexAt(int p_ScreenX, int p_ScreenY)
++{
++  if (!m_ListEnabled || !m_UiListView) return -1;
++
++  return m_UiListView->GetChatIndexAt(p_ScreenX, p_ScreenY);
++}
++
++bool UiView::IsEntryAt(int p_ScreenX, int p_ScreenY)
++{
++  if (!m_UiEntryView) return false;
++
++  return (p_ScreenY >= m_UiEntryView->Y()) && (p_ScreenY < (m_UiEntryView->Y() + m_UiEntryView->H())) &&
++         (p_ScreenX >= m_UiEntryView->X()) && (p_ScreenX < (m_UiEntryView->X() + m_UiEntryView->W()));
++}
++
+ void UiView::SetListDirty(bool p_Dirty)
+ {
+   m_UiListView->SetDirty(p_Dirty);
+diff --git a/src/uiview.h b/src/uiview.h
+index 4907e300..06d4b310 100644
+--- a/src/uiview.h
++++ b/src/uiview.h
+@@ -45,6 +45,8 @@ public:
+   int GetScreenWidth();
+   int GetScreenHeight();
+   void DecreaseListWidth();
++  int GetListChatIndexAt(int p_ScreenX, int p_ScreenY);
++  bool IsEntryAt(int p_ScreenX, int p_ScreenY);
+   void IncreaseListWidth();
+ 
+ protected:
