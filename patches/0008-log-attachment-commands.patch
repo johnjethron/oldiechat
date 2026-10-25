@@ -1,0 +1,38 @@
+diff --git a/src/uimodel.cpp b/src/uimodel.cpp
+index f6a0485b..bcb46e5a 100644
+--- a/src/uimodel.cpp
++++ b/src/uimodel.cpp
+@@ -1241,12 +1241,22 @@ void UiModel::Impl::OnKeyOpenAttachment(std::string p_FilePath /*= std::string()
+   if (p_FilePath.empty())
+   {
+     // user-triggered call
+-    if (!GetMessageAttachmentPath(p_FilePath, DownloadFileActionOpen)) return;
++    if (!GetSelectMessageActive())
++    {
++      LOG_INFO("open attachment: no message selected");
++      return;
++    }
++
++    if (!GetMessageAttachmentPath(p_FilePath, DownloadFileActionOpen))
++    {
++      LOG_INFO("open attachment: not available yet (downloading or no attachment)");
++      return;
++    }
+   }
+   else
+   {
+     // protocol-triggered call
+-    LOG_TRACE("download file action open %s", p_FilePath.c_str());
++    LOG_INFO("open attachment: downloaded %s", p_FilePath.c_str());
+   }
+ 
+   OpenAttachment(p_FilePath);
+@@ -1326,7 +1336,7 @@ void UiModel::Impl::RunProgram(const std::string& p_Cmd)
+   }
+ 
+   // run command
+-  LOG_TRACE("cmd \"%s\" start", p_Cmd.c_str());
++  LOG_INFO("cmd \"%s\" start", p_Cmd.c_str());
+   int rv = SysUtil::System(p_Cmd);
+   if (rv != 0)
+   {

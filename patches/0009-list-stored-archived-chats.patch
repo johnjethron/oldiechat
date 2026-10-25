@@ -1,0 +1,86 @@
+diff --git a/lib/wmchat/go/gowm.go b/lib/wmchat/go/gowm.go
+index f88ef38f..37d3a2d1 100644
+--- a/lib/wmchat/go/gowm.go
++++ b/lib/wmchat/go/gowm.go
+@@ -10,6 +10,7 @@ package main
+ import (
+ 	"bufio"
+ 	"context"
++	"database/sql"
+ 	"encoding/gob"
+ 	"encoding/json"
+ 	"errors"
+@@ -2903,9 +2904,51 @@ func WmLogin(connId int) int {
+ 	}
+ 
+ 	LOG_DEBUG("login ok")
++	go NotifyStoredArchivedChats(connId)
+ 	return 0
+ }
+ 
++// NotifyStoredArchivedChats reports all chats marked archived in the app state
++// store, including those without messages in the history sync, so they can be
++// listed in the archived chats view.
++func NotifyStoredArchivedChats(connId int) {
++	client := GetClient(connId)
++	if client == nil || client.Store.ID == nil {
++		return
++	}
++
++	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=ro", GetPath(connId)+"/session.db"))
++	if err != nil {
++		LOG_WARNING(fmt.Sprintf("archived chats db error %#v", err))
++		return
++	}
++	defer db.Close()
++
++	rows, err := db.Query("SELECT chat_jid FROM whatsmeow_chat_settings WHERE our_jid=? AND archived=1",
++		client.Store.ID.String())
++	if err != nil {
++		LOG_WARNING(fmt.Sprintf("archived chats query error %#v", err))
++		return
++	}
++	defer rows.Close()
++
++	count := 0
++	for rows.Next() {
++		var jidStr string
++		if rows.Scan(&jidStr) != nil {
++			continue
++		}
++		jid, parseErr := types.ParseJID(jidStr)
++		if parseErr != nil {
++			continue
++		}
++		chatId := GetChatId(client, &jid, nil)
++		CWmUpdateArchivedNotify(connId, chatId, 1)
++		count++
++	}
++	LOG_INFO(fmt.Sprintf("archived chats from store: %d", count))
++}
++
+ func WmLogout(connId int) int {
+ 
+ 	LOG_DEBUG("logout " + strconv.Itoa(connId))
+diff --git a/src/uimodel.cpp b/src/uimodel.cpp
+index bcb46e5a..c56a4866 100644
+--- a/src/uimodel.cpp
++++ b/src/uimodel.cpp
+@@ -2379,7 +2379,16 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+         std::string chatId = updateArchivedNotify->chatId;
+         bool isArchived = updateArchivedNotify->isArchived;
+         LOG_TRACE("archived notify %s is %s", chatId.c_str(), (isArchived ? "archived" : "unarchived"));
+-        if (!m_ChatInfos[profileId].count(chatId)) break;
++        if (!m_ChatInfos[profileId].count(chatId))
++        {
++          // archived chat without local messages (e.g. archived long ago), list it in the archived view
++          if (!isArchived || IsChatForceHidden(chatId)) break;
++
++          ChatInfo chatInfo;
++          chatInfo.id = chatId;
++          chatInfo.isArchived = true;
++          m_ChatInfos[profileId][chatId] = chatInfo;
++        }
+ 
+         m_ChatInfos[profileId][chatId].isArchived = isArchived;
+         if (isArchived != m_ShowArchived)

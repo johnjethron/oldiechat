@@ -6,7 +6,7 @@
 #   - copia el programa a /data/local/tmp/oldiechat (nchat, conversor y
 #     reproductor de audio, terminfo, zonas horarias, scripts)
 #   - mueve la sesión de una instalación anterior en /data/local/tmp/nchat
-#   - copia key.conf, ui.conf y glyphs.txt a la configuración (respalda los existentes)
+#   - copia key.conf, ui.conf, glyphs.txt y guide.txt a la configuración (respalda los existentes)
 #   - crea /system/etc/resolv.conf
 #   - instala /system/etc/ssl/certs/ca-certificates.crt
 #   - crea /system/bin/wsp para abrir OldieChat con un solo comando
@@ -112,12 +112,17 @@ install_program() {
   if root "[ -d ${OLD_DEST}/home ] && [ ! -d ${DEST}/home ]" >/dev/null; then
     log "Moviendo la sesión de ${OLD_DEST} a ${DEST}"
     root "mv ${OLD_DEST}/home ${DEST}/home" || die "no pude mover ${OLD_DEST}/home"
-    root "rm -r ${OLD_DEST}"
+    root "rm -r ${OLD_DEST}; touch ${DEST}/home/.migrated-from-nchat"
+  fi
+  # nchat guarda rutas absolutas de los adjuntos en su caché: tras migrar, la
+  # ruta vieja debe seguir existiendo como enlace
+  if root "[ -f ${DEST}/home/.migrated-from-nchat ] && [ ! -e ${OLD_DEST} ]" >/dev/null; then
+    root "ln -s ${DEST} ${OLD_DEST}"
   fi
 
-  log "Instalando key.conf, ui.conf y glyphs.txt"
+  log "Instalando key.conf, ui.conf, glyphs.txt y guide.txt"
   root "mkdir ${DEST}/home ${DEST}/home/.config ${CONFDIR} 2>/dev/null; chmod 700 ${DEST}/home"
-  for f in key.conf ui.conf glyphs.txt; do
+  for f in key.conf ui.conf glyphs.txt guide.txt; do
     [[ -f "${PKG}/config/${f}" ]] || continue
     root "if [ -f ${CONFDIR}/${f} ]; then cat ${CONFDIR}/${f} > ${CONFDIR}/${f}.bak; chmod 600 ${CONFDIR}/${f}.bak; fi; \
       cat ${STAGE}/config/${f} > ${CONFDIR}/${f} && chmod 600 ${CONFDIR}/${f}"

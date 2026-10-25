@@ -32,6 +32,9 @@ for d in "$HOME" "$HOME/tmp" "$HOME/.config"; do
   [ -d "$d" ] || mkdir "$d" || exit 1
 done
 
+# registro del audio: se conserva solo la sesión anterior
+[ ! -f "$HOME/audio.log" ] || mv "$HOME/audio.log" "$HOME/audio.log.1"
+
 "$D/bin/nchat" -d "$HOME/.config/nchat" "$@"
 rc=$?
 
