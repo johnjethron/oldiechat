@@ -6,7 +6,8 @@
 # Revisa dos cosas:
 #   1. Lo fijado: el commit de nchat en work/nchat (después de ./build.sh) y
 #      engine/vendor/modules.txt.
-#   2. Lo último publicado: go.mod de whatsmeow (rama main) y de nchat (master).
+#   2. Lo último publicado: go.mod de whatsmeow (rama main) y de nchat (master),
+#      y cuántos commits está WHATSMEOW_COMMIT atrás de whatsmeow main.
 #
 # Código de salida: 0 si todo cabe en el Go fijado, 1 si algo exige uno más
 # nuevo (ver MAINTAINING.md, "whatsmeow exige un Go más nuevo").
@@ -64,6 +65,10 @@ compare "whatsmeow main" "$(fetch https://raw.githubusercontent.com/tulir/whatsm
 compare "nchat master lib/wmchat/go" "$(fetch https://raw.githubusercontent.com/d99kris/nchat/master/lib/wmchat/go/go.mod | go_directive)"
 compare "nchat master whatsmeow incluido" \
   "$(fetch https://raw.githubusercontent.com/d99kris/nchat/master/lib/wmchat/go/ext/whatsmeow/go.mod | go_directive)"
+
+behind="$(fetch "https://api.github.com/repos/tulir/whatsmeow/compare/${WHATSMEOW_COMMIT}...main" |
+  awk -F'[:,]' '/"ahead_by"/ { print $2 + 0; exit }')"
+echo "  whatsmeow ${WHATSMEOW_COMMIT}: ${behind:-?} commits atrás de main (scripts/update-whatsmeow.sh)"
 
 echo
 if [[ ${newer} -eq 0 ]]; then
