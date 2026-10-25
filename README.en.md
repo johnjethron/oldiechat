@@ -40,8 +40,8 @@ drive build things like this. I did it, and you can too.
 - Listen to voice notes in the background: they are converted from Opus to WAV
   and played with Android's media player.
 - Show times in the phone's time zone.
-- Show the emoji that the Android 4.x font can draw and replace the rest with
-  short emoticons.
+- Show black-and-white emoji with the Noto Emoji font, and replace the few that
+  cannot be drawn properly with a short emoticon.
 
 For now it does not send voice notes, images or files, and does not show images.
 
@@ -85,14 +85,18 @@ Cortex-A9, 512 MB RAM, rooted with SuperSU).
    Accept the SuperSU prompt if it appears. The script:
 
    - copies the program to `/data/local/tmp/oldiechat`;
-   - installs the configuration (`key.conf`, `ui.conf`, `glyphs.txt`), backing up
-     any existing one as `.bak`;
+   - installs the configuration (`key.conf`, `ui.conf`, `color.conf`,
+     `glyphs.txt`, `guide.txt`), backing up any existing one as `.bak`;
    - creates `/system/etc/resolv.conf` with public DNS (`1.1.1.1` and `8.8.8.8`);
    - installs current root certificates in
      `/system/etc/ssl/certs/ca-certificates.crt`;
    - keeps an `.orig` copy of those two files if they already existed;
    - creates the `/system/bin/wsp` command;
-   - copies the icon to `/sdcard/OldieChat/oldiechat.png`.
+   - copies the icon to `/sdcard/OldieChat/oldiechat.png`;
+   - installs the emoji font in `/system/fonts/NotoEmoji-OldieChat.ttf` and adds
+     it to `/system/etc/fallback_fonts*.xml`, keeping the original as `.orig`.
+     The first time it asks you to **reboot the phone** (see
+     [Emoji font](#emoji-font)).
 
    If there is a previous install in `/data/local/tmp/nchat`, its session is moved
    to the new path, so you do not need to link again.
@@ -128,6 +132,7 @@ In **Preferences**:
 | Fn key | Volume up |
 | Font size | whatever is readable for you (10–12 on 3.5") |
 | Close window on exit | on |
+| Back button behavior | Sends TAB to terminal (Back = go back) |
 
 Then close TermOne Plus completely and open it again.
 
@@ -149,34 +154,44 @@ normally and OldieChat gets its own icon.
 
 ## Shortcuts
 
-One rule: **Volume up = move**, **Volume down = action**, using the Spanish
-initial. Press and release the volume button before the letter. The same table
-appears on the phone with Volume down + G.
+One rule: **Volume up = move**, **Volume down = action**. Press and release the
+volume button before the letter; pressed twice it stays locked and once more
+releases it (both buttons work the same way). The same table appears on the
+phone with Volume down + G.
 
 | Keys | Action |
 | --- | --- |
 | Vol. up + W | go up in the conversation (selects messages) |
-| Vol. up + S | go down in the conversation (at the end you are back to typing) |
+| Vol. up + S | go down in the conversation |
 | Vol. up + A | previous chat |
 | Vol. up + D | next chat |
 | Enter | send message |
 | Enter on a voice note | play; again: stop |
 | Vol. down + A | **A**rchivados: show or hide archived chats |
-| Vol. down + B | **B**uscar: find a chat by name |
 | Vol. down + G | **G**uía: this table |
-| Vol. down + S | **S**alir: quit |
+| Vol. down + S | back (or **S**alir: quit) |
+| Back | same as Vol. down + S (with TermOne Plus set up as described above) |
 
-- A and D switch chats only when the input field is empty; while typing they move
-  the cursor.
-- Enter on a selected message that is not a voice note takes you back to typing.
-- **Taps**: tapping a name in the list opens that conversation. Two taps in a row
-  (within 3 seconds) on the input area open or close the keyboard. The Back
-  button also closes it.
+- **Back**, step by step: while reviewing messages it returns to the chat list;
+  in the archived list it returns to the regular list; in the guide it closes it.
+  Only from the main list does it quit OldieChat, asking to confirm with Vol.
+  down + S again.
+- A and D always switch chats, also with a half-written message: the text stays
+  as that chat's draft and shows up again when you come back.
+- Enter always sends when there is text. Only with an empty input field, Enter
+  on a selected voice note plays or stops it, and on any other message takes you
+  back to typing.
+- **The cursor always stays at the end of the text**: to fix something, delete.
+  No key moves it back.
+- Every other nchat shortcut is disabled.
+- **Voice notes** are shown as `audio 00.33` (minutes.seconds). They are
+  downloaded, converted and played in the background after 1–2 seconds, and stop
+  when you quit. If one does not play, every step is logged in
+  `/data/local/tmp/oldiechat/home/audio.log`.
 - **Archived**: the status bar shows `[Archivados]` while that list is shown; it
   includes all your archived chats.
-- **Voice notes**: they are downloaded, converted and played in the background
-  after 1–2 seconds, and stop when you quit. If one does not play, every step is
-  logged in `/data/local/tmp/oldiechat/home/audio.log`.
+- **Taps**: tapping a name in the list opens that conversation, and two taps in a
+  row on the input area open or close the keyboard.
 
 ## If you later use `adb shell` without root
 
@@ -189,10 +204,12 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
 
 ## Known limitations
 
-- **Emoji**: the Android 4.1 font only has 2012-era emoji, in black and white.
-  Newer ones are shown as `[e]` or as a short emoticon. Faces are always shown as
-  emoticons (`:)`, `XD`, `<3`), because that font draws them as Android robots.
-  Messages are sent with the original emoji.
+- **Emoji** are shown in black and white (Noto Emoji). Those the font lacks, or
+  that are drawn wider than their space in the terminal (some symbols such as ☀
+  or ❤), are shown as a short emoticon (`<3`, `(sol)`) or as `[e]`. Messages are
+  sent with the original emoji.
+- **Text in other scripts** (Chinese, Japanese, Korean): Android 4.1 fonts draw
+  it with a different width than the terminal, so it is shown as `?`.
 - **Scrolling with the volume buttons**: in TermOne Plus a volume button set as a
   modifier cannot also send a key of its own, so scrolling uses Volume up + W/S.
 - **Keyboard**: with "Send mouse events" on, TermOne Plus does not open the
@@ -203,8 +220,33 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
 - Go 1.26 officially requires Linux kernel 3.2 or newer; it works on the Galaxy
   Fame's 3.0.101 kernel.
 - Only tested on a Galaxy Fame. Other rooted Android 4.x ARMv7 phones should
-  work; for good emoji rendering on another model, generate `glyphs.txt` from its
-  fonts (see below).
+  work; for good emoji rendering on another model, measure it again with
+  `scripts/glyphs.sh` (see below).
+
+## Emoji font
+
+`install.sh` installs Noto Emoji (Google's monochrome version, SIL OFL 1.1
+license, 850 KB) in `/system/fonts` and puts it in Android's fallback list before
+`AndroidEmoji.ttf`, the original font that draws faces as robots. Android only
+reads that list at boot, so the phone has to be rebooted once.
+
+To undo it, from the computer:
+
+```bash
+adb shell
+```
+
+```
+su
+mount -o remount,rw /system
+for f in /system/etc/fallback_fonts*.xml.orig; do cat $f > ${f%.orig}; rm $f; done
+rm /system/fonts/NotoEmoji-OldieChat.ttf
+mount -o remount,ro /system
+reboot
+```
+
+After rebooting, measure again with `scripts/glyphs.sh` and run `install.sh`
+again so `glyphs.txt` matches the phone's fonts.
 
 ## Compatibility
 
@@ -213,8 +255,8 @@ pinned and stored:
 
 - Exact versions of Alpine, Go, nchat, whatsmeow, libopus and the Java compiler in
   a single file, [`versions.env`](versions.env), with checksums.
-- Go dependencies stored in the repository (`third_party/`, `engine/vendor/`) and
-  patches in `patches/`.
+- Go dependencies stored in the repository (`nchat/vendor/`, `engine/vendor/`)
+  and patches in `nchat/patches/` (and `go/patches/` for Go).
 - Every release also ships a package with the complete source code.
 - `scripts/check-go-version.sh` warns when whatsmeow or nchat start requiring a
   newer Go, and `scripts/phone-test.sh` tests the phone (startup, DNS, HTTPS,
@@ -243,10 +285,12 @@ The build runs emulated (Alpine armv7 on qemu) and takes a while. The output is
 `out/oldiechat-terminal-<version>-armv7/` plus the `.tar.gz` and its `.sha256`
 for Releases. `./build.sh shell` opens a shell in the container.
 
-To generate `config/glyphs.txt` from the fonts of another connected phone:
+To generate `phone/config/glyphs.txt` by measuring the connected phone (about 9
+minutes): the `GlyphProbe` program asks Android for each character's width and
+draws it, the same way TermOne Plus does.
 
 ```bash
-tools/glyphs.sh
+scripts/glyphs.sh
 ```
 
 ### How it works
@@ -264,7 +308,7 @@ tools/glyphs.sh
 - **oldiechat.sh** sets up the environment: terminfo, time zone (Android uses
   its own tzdata format), `HOME` and the temp folder.
 
-Patches applied to nchat (`patches/`):
+Patches applied to nchat (`nchat/patches/`):
 
 | Patch | What it does |
 | --- | --- |
@@ -274,10 +318,14 @@ Patches applied to nchat (`patches/`):
 | 0004 | Glyph filter (`glyphs.txt`) for old fonts and mismatched character widths. |
 | 0005 | Use `/system/bin/sh` on Android to run external commands. |
 | 0006 | Archived chats view (`toggle_archived`). |
-| 0007 | `stop` key and `attachment_stop_command` option. |
-| 0008 | Log every attempt to open an attachment and the command it runs. |
-| 0009 | List all stored archived chats, even without recent messages. |
-| 0010 | Simple keys: left/right switch chats, Enter on a voice note plays it, guide (`guide.txt`). |
+| 0007 | Log every attempt to open an attachment and the command it runs. |
+| 0008 | List all stored archived chats, even without recent messages. |
+| 0009 | Simple keys, back, guide (`guide.txt`) and cursor always at the end. |
+| 0010 | Voice notes shown as `audio mm.ss`. |
+| 0011 | Terminal character widths (measured on the phone) instead of the C library's. |
+
+Patches to the Go runtime, if ever needed, go in `go/patches/` (see
+[MAINTAINING.md](MAINTAINING.md), in Spanish).
 
 ### Layout
 
@@ -285,16 +333,16 @@ Patches applied to nchat (`patches/`):
 build.sh            full build
 Dockerfile.armv7    Alpine armv7 image
 versions.env        exact versions and checksums
-patches/            nchat patches
+nchat/patches/      nchat patches
+nchat/vendor/       nchat Go dependencies (go mod vendor)
+go/patches/         own Go runtime patches (empty for now)
 engine/             Go engine: audio, network, time zone, messaging
-player/             player (Java, app_process)
-files/              scripts and icon shipped in the package
-config/             key.conf, ui.conf, glyphs.txt
-scripts/            phone tests, Go version check, vendoring
-third_party/        nchat Go dependencies (go mod vendor)
+player/             Java: player and glyph measurement (app_process)
+phone/              what gets installed on the phone: scripts, icon,
+                    config/ (key, ui, color, glyphs, guide) and fonts/
+scripts/            tests, glyphs, emoji font, icon, Go version, vendoring
 tests/data/         test audio
-tools/              glyphs.txt and icon generators
-docs/               future app architecture
+docs/               project status and future app architecture
 ```
 
 ## Licenses

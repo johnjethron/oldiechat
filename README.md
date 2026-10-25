@@ -40,8 +40,8 @@ pasión y ganas pueda crear cosas como esta. Yo lo logré, y tú también puedes
 - Escuchar notas de voz en segundo plano: se convierten de Opus a WAV y suenan
   con el reproductor de Android.
 - Mostrar la hora de la zona horaria del teléfono.
-- Mostrar los emoji que la fuente de Android 4.x puede dibujar y reemplazar el
-  resto por emoticonos cortos.
+- Mostrar emoji en blanco y negro con la fuente Noto Emoji, y reemplazar por un
+  emoticono corto los pocos que no se pueden dibujar bien.
 
 Por ahora no envía audios, imágenes ni archivos, ni muestra imágenes.
 
@@ -85,14 +85,18 @@ Docker, `qemu-user-static` y `binfmt-support`.
    Acepta el permiso de SuperSU si aparece. El script:
 
    - copia el programa a `/data/local/tmp/oldiechat`;
-   - instala la configuración (`key.conf`, `ui.conf`, `glyphs.txt`) y respalda
-     la que ya existía como `.bak`;
+   - instala la configuración (`key.conf`, `ui.conf`, `color.conf`,
+     `glyphs.txt`, `guide.txt`) y respalda la que ya existía como `.bak`;
    - crea `/system/etc/resolv.conf` con DNS públicos (`1.1.1.1` y `8.8.8.8`);
    - instala certificados raíz actuales en
      `/system/etc/ssl/certs/ca-certificates.crt`;
    - guarda una copia `.orig` de esos dos archivos si ya existían;
    - crea el comando `/system/bin/wsp`;
-   - copia el ícono a `/sdcard/OldieChat/oldiechat.png`.
+   - copia el ícono a `/sdcard/OldieChat/oldiechat.png`;
+   - instala la fuente de emoji en `/system/fonts/NotoEmoji-OldieChat.ttf` y la
+     agrega a `/system/etc/fallback_fonts*.xml`, guardando el original como
+     `.orig`. La primera vez pide **reiniciar el teléfono** (ver
+     [Fuente de emoji](#fuente-de-emoji)).
 
    Si ya tenías una instalación anterior en `/data/local/tmp/nchat`, mueve la
    sesión a la ruta nueva y no hay que volver a vincular.
@@ -128,6 +132,7 @@ En **Preferencias**:
 | Tecla FN | Volumen arriba |
 | Tamaño de fuente | el que te resulte legible (10–12 en 3,5") |
 | Cerrar ventana al salir | activado |
+| Acción del botón ATRÁS | Envía TAB al terminal (Atrás = volver) |
 
 Después cierra TermOne Plus del todo y vuelve a abrirlo.
 
@@ -151,34 +156,44 @@ abriéndose normal y OldieChat tiene su propio ícono.
 
 ## Atajos
 
-Una sola regla: **Volumen arriba = moverse**, **Volumen abajo = acción**, con la
-inicial en español. El botón de volumen se aprieta y se suelta antes de la
-letra. La misma tabla aparece en el teléfono con Volumen abajo + G.
+Una sola regla: **Volumen arriba = moverse**, **Volumen abajo = acción**. El
+botón de volumen se aprieta y se suelta antes de la letra; apretado dos veces
+queda fijo y otra vez lo suelta (los dos botones funcionan igual). La misma tabla
+aparece en el teléfono con Volumen abajo + G.
 
 | Teclas | Qué hace |
 | --- | --- |
 | Vol. arriba + W | subir en la conversación (selecciona mensajes) |
-| Vol. arriba + S | bajar en la conversación (al final vuelves a escribir) |
+| Vol. arriba + S | bajar en la conversación |
 | Vol. arriba + A | chat anterior |
 | Vol. arriba + D | chat siguiente |
 | Enter | enviar mensaje |
 | Enter sobre un audio | escuchar; otra vez: detener |
 | Vol. abajo + A | **A**rchivados (mostrar u ocultar) |
-| Vol. abajo + B | **B**uscar chat por nombre |
 | Vol. abajo + G | **G**uía (esta tabla) |
-| Vol. abajo + S | **S**alir |
+| Vol. abajo + S | volver (o **S**alir) |
+| Atrás | igual que Vol. abajo + S (con TermOne Plus configurado como se indica arriba) |
 
-- A y D cambian de chat solo cuando el campo de escritura está vacío; si estás
-  escribiendo, mueven el cursor.
-- Enter sobre un mensaje seleccionado que no es audio te devuelve a escribir.
-- **Toques**: tocar un nombre de la lista abre esa conversación. Dos toques
-  seguidos (en menos de 3 segundos) en el área de escritura abren o cierran el
-  teclado. El botón Atrás también lo cierra.
+- **Volver**, paso a paso: si estás revisando mensajes, vuelve a la lista de
+  chats; si estás en los archivados, vuelve a la lista normal; si estás en la
+  guía, la cierra. Solo desde la lista principal sale de OldieChat, y pide
+  confirmar con Vol. abajo + S otra vez.
+- A y D cambian de chat siempre, también con un mensaje a medio escribir: el
+  texto queda guardado como borrador en ese chat y aparece al volver.
+- Enter envía siempre que haya texto escrito. Solo con el campo de escritura
+  vacío, Enter sobre un audio seleccionado lo escucha o lo detiene, y sobre otro
+  mensaje te devuelve a escribir.
+- **El cursor está siempre al final del texto**: para corregir, borra. Ninguna
+  tecla lo mueve hacia atrás.
+- Todos los demás atajos de nchat están desactivados.
+- **Audios**: se muestran como `audio 00.33` (minutos.segundos). Se descargan, se
+  convierten y suenan en segundo plano después de 1 o 2 segundos, y se detienen
+  al salir. Si uno no suena, el detalle de cada paso queda en
+  `/data/local/tmp/oldiechat/home/audio.log`.
 - **Archivados**: la barra de estado muestra `[Archivados]` mientras ves esa
   lista, que incluye todos tus chats archivados.
-- **Audios**: el audio se descarga, se convierte y suena en segundo plano después
-  de 1 o 2 segundos, y se detiene al salir. Si no suena, el detalle de cada paso
-  queda en `/data/local/tmp/oldiechat/home/audio.log`.
+- **Toques**: tocar un nombre de la lista abre esa conversación, y dos toques
+  seguidos en el área de escritura abren o cierran el teclado.
 
 ## Si después usas `adb shell` sin root
 
@@ -191,10 +206,12 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
 
 ## Limitaciones conocidas
 
-- **Emoji**: la fuente de Android 4.1 solo trae emoji de 2012 y en blanco y negro.
-  Los posteriores se muestran como `[e]` o como un emoticono corto. Las caras se
-  muestran siempre como emoticono (`:)`, `XD`, `<3`), porque en esa fuente son
-  dibujos del robot de Android. Los mensajes se envían con los emoji originales.
+- **Emoji**: se ven en blanco y negro (Noto Emoji). Los que la fuente no tiene, o
+  que se dibujan más anchos que su espacio en la terminal (algunos símbolos como
+  ☀ o ❤), se muestran como un emoticono corto (`<3`, `(sol)`) o como `[e]`. Los
+  mensajes se envían con los emoji originales.
+- **Texto en otros alfabetos** (chino, japonés, coreano): las fuentes de Android
+  4.1 los dibujan con otro ancho que la terminal, así que se muestran como `?`.
 - **Desplazamiento con los botones de volumen**: en TermOne Plus un botón de
   volumen configurado como modificador no puede además enviar una tecla propia;
   por eso se desplaza con Volumen arriba + W/S.
@@ -206,8 +223,33 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
 - Go 1.26 pide oficialmente un kernel Linux 3.2 o más nuevo; en el kernel 3.0.101
   del Galaxy Fame funciona.
 - Solo se ha probado en un Galaxy Fame. Otros Android 4.x ARMv7 con root
-  deberían funcionar; para que los emoji se vean bien en otro modelo, genera
-  `glyphs.txt` con sus fuentes (ver más abajo).
+  deberían funcionar; para que los emoji se vean bien en otro modelo, vuelve a
+  medir con `scripts/glyphs.sh` (ver más abajo).
+
+## Fuente de emoji
+
+`install.sh` instala Noto Emoji (versión monocroma de Google, licencia SIL OFL
+1.1, 850 KB) en `/system/fonts` y la pone en la lista de respaldo de Android
+antes de `AndroidEmoji.ttf`, la fuente original que dibuja las caras como
+robots. Android solo lee esa lista al arrancar, así que hay que reiniciar una vez.
+
+Para volver atrás, desde el equipo:
+
+```bash
+adb shell
+```
+
+```
+su
+mount -o remount,rw /system
+for f in /system/etc/fallback_fonts*.xml.orig; do cat $f > ${f%.orig}; rm $f; done
+rm /system/fonts/NotoEmoji-OldieChat.ttf
+mount -o remount,ro /system
+reboot
+```
+
+Después del reinicio, vuelve a medir con `scripts/glyphs.sh` y ejecuta de nuevo
+`install.sh` para que `glyphs.txt` corresponda a las fuentes del teléfono.
 
 ## Compatibilidad
 
@@ -216,8 +258,8 @@ lo necesario para compilarlo queda fijado y guardado:
 
 - Versiones exactas de Alpine, Go, nchat, whatsmeow, libopus y del compilador
   Java en un solo archivo, [`versions.env`](versions.env), con sus checksums.
-- Las dependencias Go guardadas en el repositorio (`third_party/`,
-  `engine/vendor/`) y los parches en `patches/`.
+- Las dependencias Go guardadas en el repositorio (`nchat/vendor/`,
+  `engine/vendor/`) y los parches en `nchat/patches/` (y `go/patches/` para Go).
 - Cada versión publica también un paquete con el código fuente completo.
 - `scripts/check-go-version.sh` avisa si whatsmeow o nchat empiezan a exigir un
   Go más nuevo, y `scripts/phone-test.sh` prueba el teléfono (arranque, DNS,
@@ -247,10 +289,12 @@ resultado queda en `out/oldiechat-terminal-<versión>-armv7/` y en el `.tar.gz`
 con su `.sha256` para Releases. `./build.sh shell` abre una shell en el
 contenedor.
 
-Para generar `config/glyphs.txt` con las fuentes de otro teléfono conectado:
+Para generar `phone/config/glyphs.txt` midiendo el teléfono conectado (unos 9
+minutos): el programa `GlyphProbe` pregunta a Android el ancho de cada carácter
+y lo dibuja, igual que TermOne Plus.
 
 ```bash
-tools/glyphs.sh
+scripts/glyphs.sh
 ```
 
 ### Cómo funciona
@@ -269,7 +313,7 @@ tools/glyphs.sh
 - **oldiechat.sh** prepara el entorno: terminfo, zona horaria (Android usa un
   formato de tzdata propio), `HOME` y carpeta temporal.
 
-Parches aplicados a nchat (`patches/`):
+Parches aplicados a nchat (`nchat/patches/`):
 
 | Parche | Qué hace |
 | --- | --- |
@@ -279,10 +323,14 @@ Parches aplicados a nchat (`patches/`):
 | 0004 | Filtro de glifos (`glyphs.txt`) para fuentes antiguas y anchos de carácter distintos. |
 | 0005 | Usar `/system/bin/sh` en Android para ejecutar comandos externos. |
 | 0006 | Vista de chats archivados (`toggle_archived`). |
-| 0007 | Tecla `stop` y opción `attachment_stop_command`. |
-| 0008 | Registrar en el log cada intento de abrir un adjunto y el comando lanzado. |
-| 0009 | Listar todos los chats archivados guardados, aunque no tengan mensajes recientes. |
-| 0010 | Atajos simples: flechas izquierda/derecha cambian de chat, Enter sobre un audio lo reproduce, guía (`guide.txt`). |
+| 0007 | Registrar en el log cada intento de abrir un adjunto y el comando lanzado. |
+| 0008 | Listar todos los chats archivados guardados, aunque no tengan mensajes recientes. |
+| 0009 | Atajos simples, volver, guía (`guide.txt`) y cursor siempre al final. |
+| 0010 | Audios como `audio mm.ss`. |
+| 0011 | Anchos de carácter de la terminal (medidos en el teléfono) en lugar de los de la biblioteca C. |
+
+Los parches al runtime de Go, si alguna vez hacen falta, van en `go/patches/`
+(ver [MAINTAINING.md](MAINTAINING.md)).
 
 ### Estructura
 
@@ -290,16 +338,16 @@ Parches aplicados a nchat (`patches/`):
 build.sh            compilación completa
 Dockerfile.armv7    imagen Alpine armv7
 versions.env        versiones exactas y checksums
-patches/            parches a nchat
+nchat/patches/      parches a nchat
+nchat/vendor/       dependencias Go de nchat (go mod vendor)
+go/patches/         parches propios al runtime de Go (vacío por ahora)
 engine/             motor Go: audio, red, zona horaria, mensajería
-player/             reproductor (Java, app_process)
-files/              scripts e ícono que van en el paquete
-config/             key.conf, ui.conf, glyphs.txt
-scripts/            pruebas en el teléfono, versión de Go, vendor
-third_party/        dependencias Go de nchat (go mod vendor)
+player/             Java: reproductor y medición de glifos (app_process)
+phone/              lo que se instala en el teléfono: scripts, ícono,
+                    config/ (key, ui, color, glyphs, guide) y fonts/
+scripts/            pruebas, glifos, fuente de emoji, ícono, versión de Go, vendor
 tests/data/         audio de prueba
-tools/              generador de glyphs.txt e ícono
-docs/               arquitectura de la futura app
+docs/               estado del proyecto y arquitectura de la futura app
 ```
 
 ## Licencias

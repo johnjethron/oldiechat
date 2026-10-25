@@ -11,9 +11,10 @@ publicar una versión y qué hacer cuando algo se rompe.
 | --- | --- | --- |
 | Alpine (imagen de compilación) | `versions.env` (`ALPINE_IMAGE`, por digest) | — |
 | Go | `versions.env` (`GO_VERSION`, `GO_SHA256`) | parche musl en el código de nchat |
-| nchat | `versions.env` (`NCHAT_COMMIT`) | `patches/` y el paquete de código fuente de cada versión |
-| whatsmeow | incluido en nchat; el motor lo fija en `engine/go.mod` | `engine/vendor/`, `third_party/wmchat-vendor/` |
-| Dependencias Go de nchat | `third_party/wmchat-vendor/` (`go mod vendor`) | sí |
+| nchat | `versions.env` (`NCHAT_COMMIT`) | `nchat/patches/` y el paquete de código fuente de cada versión |
+| whatsmeow | incluido en nchat; el motor lo fija en `engine/go.mod` | `engine/vendor/`, `nchat/vendor/` |
+| Dependencias Go de nchat | `nchat/vendor/` (`go mod vendor`) | sí |
+| Fuente de emoji | `versions.env` (`NOTO_EMOJI_COMMIT`, `NOTO_EMOJI_SHA256`) | `phone/fonts/` (`scripts/make-emoji-font.sh`) |
 | libopus | `versions.env` (`OPUS_VERSION`, `OPUS_SHA256`) | — |
 | d8 y JDK | `versions.env` (`R8_VERSION`, `JDK_IMAGE`) | — |
 
@@ -37,7 +38,8 @@ docker save oldiechat-builder | gzip > oldiechat-builder-<versión>.tar.gz
 4. Con el teléfono conectado: `out/oldiechat-terminal-<versión>-armv7/install.sh`.
 5. `scripts/phone-test.sh --sound`: tiene que terminar en "Todo pasó".
 6. Prueba a mano en TermOne Plus: abrir con `wsp`, enviar un mensaje, escuchar
-   una nota de voz, ver los archivados.
+   una nota de voz, ver los archivados. No se prueba inyectando teclas por ADB en
+   conversaciones reales.
 7. Commit, etiqueta `v<versión>` y Release en GitHub con el `.tar.gz`, su
    `.sha256` y el paquete de código fuente.
 
@@ -68,8 +70,9 @@ hoy funciona. Si una versión nueva de Go falla en el teléfono:
   `epoll_pwait2`, o leer `/dev/urandom` en vez de `getrandom`), agrega en el
   runtime un respaldo que la use cuando la nueva devuelva `ENOSYS`. Muchas
   partes de Go ya hacen eso.
-- Guarda el cambio como `patches/go/<número>-<descripción>.patch` y aplícalo en
-  `Dockerfile.armv7` junto al parche de musl.
+- Guarda el cambio como `go/patches/<número>-<descripción>.patch`.
+  `Dockerfile.armv7` aplica todo lo que haya en esa carpeta después del parche
+  de musl (ver `go/patches/README.md`).
 - Si no tiene arreglo razonable, quédate en la última versión de Go que
   funciona: es lo que fija `GO_VERSION`.
 
@@ -94,6 +97,19 @@ rechaza clientes con versiones de protocolo antiguas (nchat lo explica en
 2. `./build.sh`: si un parche ya no se aplica, `git apply` lo indica. Corrígelo en
    `work/nchat` y regenéralo con `git diff`.
 3. Regenera las dependencias Go vendorizadas: `scripts/vendor-go.sh`.
+
+## Si cambian las fuentes del teléfono
+
+`phone/config/glyphs.txt` (qué caracteres se muestran y qué ancho tienen) se mide
+en el teléfono. Si cambian sus fuentes (otro modelo, o la fuente de emoji recién
+instalada y el teléfono reiniciado), vuelve a medir:
+
+```bash
+scripts/glyphs.sh
+```
+
+Para cambiar la versión de la fuente de emoji: actualiza `NOTO_EMOJI_COMMIT` y
+`NOTO_EMOJI_SHA256` en `versions.env` y ejecuta `scripts/make-emoji-font.sh`.
 
 ## Actualizar los certificados
 

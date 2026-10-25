@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.2.1
+
+- **Atajos mínimos**: solo Vol. arriba + W/S/A/D, Enter y Vol. abajo + A
+  (archivados), G (guía) y S (volver). Vol. abajo + S vuelve paso a paso y, desde
+  la lista principal, sale después de confirmar. Los demás atajos de nchat,
+  incluida la búsqueda, quedan desactivados.
+- A/D cambian de chat siempre; el texto a medio escribir queda como borrador.
+- Enter envía siempre que haya texto; solo con el campo vacío escucha o detiene el
+  audio seleccionado. El cursor queda siempre al final del texto.
+- Guía corta (Vol. abajo + G) que cabe con el teclado abierto; los diálogos ya no
+  desaparecen en pantallas chicas.
+- Audios como `audio mm.ss`; conversación con el mismo color para todos.
+- Emoji: fuente Noto Emoji monocroma instalada en el teléfono, y glifos y anchos
+  medidos en el propio teléfono (`scripts/glyphs.sh`), para que ningún carácter
+  descuadre la línea.
+- Un solo OldieChat a la vez (al abrirlo de nuevo se cierra el que quedó en otra
+  ventana) y registros de las últimas 6 sesiones.
+- Limpieza: sin la tecla de detener (Enter detiene), nchat con una sola cuenta
+  (`HAS_MULTIPROTOCOL=OFF`), imagen de compilación sin paquetes sobrantes,
+  parches renumerados y carpetas ordenadas (`nchat/`, `phone/`, `go/`).
+- `CLAUDE.md` con las reglas de trabajo y `docs/ESTADO.md` con el estado del
+  proyecto.
+
 ## 0.2.0
 
 - **Audio**: las notas de voz no sonaban después de migrar desde
