@@ -150,6 +150,8 @@ compile() {
     cp /work/nchat/lib/wmchat/go/ext/whatsmeow/LICENSE "$O/licenses/LICENSE.whatsmeow"
     cp "$B/THIRD_PARTY_LICENSES" "$O/licenses/THIRD_PARTY_LICENSES"
     cp /usr/local/share/doc/opus/COPYING "$O/licenses/LICENSE.opus"
+    cp /usr/local/go/LICENSE "$O/licenses/LICENSE.go"
+    cp /phone/licenses/* "$O/licenses/"
 
     chmod -R u=rwX,go=rX "$O"
     chmod 755 "$O/oldiechat.sh" "$O/audio.sh" "$O/install.sh" "$O/bin/nchat" "$O/bin/oldiechat-audio"
@@ -173,7 +175,11 @@ package() {
     fi
   done
   [[ -s "${OUT}/lib/player.jar" ]] || { echo "Falta player.jar" >&2; exit 1; }
-  [[ -s "${OUT}/licenses/LICENSE.opus" ]] || { echo "Falta la licencia de opus" >&2; exit 1; }
+  local lic
+  for lic in LICENSE.oldiechat LICENSE.nchat LICENSE.whatsmeow LICENSE.GPL-3.0 THIRD_PARTY_LICENSES \
+             LICENSE.opus LICENSE.go LICENSE.musl LICENSE.gcc-runtime-exception OFL.txt; do
+    [[ -s "${OUT}/licenses/${lic}" ]] || { echo "Falta la licencia ${lic}" >&2; exit 1; }
+  done
   if command -v qemu-arm-static >/dev/null; then
     qemu-arm-static "${OUT}/bin/nchat" --version | head -1
   fi

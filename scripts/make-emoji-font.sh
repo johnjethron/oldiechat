@@ -19,7 +19,7 @@ OUT="${HERE}/phone/fonts"
 mkdir -p "${TMP}" "${OUT}"
 curl -fsSL "${BASE}/NotoEmoji%5Bwght%5D.ttf" -o "${TMP}/NotoEmoji-var.ttf"
 echo "${NOTO_EMOJI_SHA256}  ${TMP}/NotoEmoji-var.ttf" | sha256sum -c --quiet -
-curl -fsSL "${BASE}/OFL.txt" -o "${OUT}/OFL-NotoEmoji.txt"
+curl -fsSL "${BASE}/OFL.txt" -o "${HERE}/phone/licenses/OFL.txt"
 
 python3 -I - "${TMP}/NotoEmoji-var.ttf" "${OUT}/NotoEmoji-OldieChat.ttf" <<'PY'
 import sys

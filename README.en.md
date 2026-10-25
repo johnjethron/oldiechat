@@ -339,7 +339,8 @@ go/patches/         own Go runtime patches (empty for now)
 engine/             Go engine: audio, network, time zone, messaging
 player/             Java: player and glyph measurement (app_process)
 phone/              what gets installed on the phone: scripts, icon,
-                    config/ (key, ui, color, glyphs, guide) and fonts/
+                    config/ (key, ui, color, glyphs, guide), fonts/ and
+                    licenses/ (licenses the build does not provide)
 scripts/            tests, glyphs, emoji font, icon, Go version, vendoring
 tests/data/         test audio
 docs/               project status and future app architecture
@@ -347,16 +348,22 @@ docs/               project status and future app architecture
 
 ## Licenses
 
-- OldieChat terminal's own code (scripts, patches, `audio/`, `player/`, tools) is
+- OldieChat terminal's own code (scripts, patches, `engine/`, `player/`) is
   distributed under the [MIT](LICENSE) license.
 - [nchat](https://github.com/d99kris/nchat) is distributed under the MIT license.
 - [whatsmeow](https://github.com/tulir/whatsmeow) is distributed under the
   Mozilla Public License 2.0, unmodified (bundled in nchat's source).
+- The [Noto Emoji](https://github.com/googlefonts/noto-emoji) font is distributed
+  under the SIL Open Font License 1.1 (`licenses/OFL.txt` in the package).
 - The **combined binary** in the package is distributed under the **GNU GPL v3**,
-  like nchat's binaries without Signal. The full licenses of nchat, whatsmeow,
-  libopus and the static libraries are in `licenses/` inside the package. The
-  corresponding source code is this repository plus the nchat commit set in
-  `build.sh`.
+  like nchat's binaries without Signal.
+- `licenses/` inside the package has the full licenses of everything in it:
+  OldieChat, nchat, whatsmeow and its Go dependencies, libopus, Go, musl, the GCC
+  runtime (with its exception), the static libraries (OpenSSL, zlib, ncurses,
+  SQLite, libmagic and its compressors) and Noto Emoji. The time zone data
+  (tzdata) is in the public domain.
+- The corresponding source code is this repository plus the nchat commit set in
+  `versions.env`, published in full with every release.
 
 ## Credits
 

@@ -48,7 +48,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 | `go/patches/` | parches propios al runtime de Go (vacío) |
 | `engine/` | motor Go: `audio/oggopus`, `netcfg`, `tz`, `wa`, `cmd/` |
 | `player/` | Java por `app_process`: reproductor y `GlyphProbe` |
-| `phone/` | lo que va al teléfono: `oldiechat.sh`, `audio.sh`, `install.sh`, ícono, `config/`, `fonts/` |
+| `phone/` | lo que va al teléfono: `oldiechat.sh`, `audio.sh`, `install.sh`, ícono, `config/`, `fonts/`, `licenses/` |
 | `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.py`, `check-go-version.sh`, `vendor-go.sh` |
 | `tests/data/` | audio de prueba |
 | `docs/` | este archivo y la arquitectura de la app |

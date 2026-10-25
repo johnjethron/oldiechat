@@ -344,7 +344,8 @@ go/patches/         parches propios al runtime de Go (vacío por ahora)
 engine/             motor Go: audio, red, zona horaria, mensajería
 player/             Java: reproductor y medición de glifos (app_process)
 phone/              lo que se instala en el teléfono: scripts, ícono,
-                    config/ (key, ui, color, glyphs, guide) y fonts/
+                    config/ (key, ui, color, glyphs, guide), fonts/ y
+                    licenses/ (licencias que no trae la compilación)
 scripts/            pruebas, glifos, fuente de emoji, ícono, versión de Go, vendor
 tests/data/         audio de prueba
 docs/               estado del proyecto y arquitectura de la futura app
@@ -352,16 +353,22 @@ docs/               estado del proyecto y arquitectura de la futura app
 
 ## Licencias
 
-- El código propio de OldieChat terminal (scripts, parches, `audio/`, `player/`,
-  herramientas) se distribuye bajo la licencia [MIT](LICENSE).
+- El código propio de OldieChat terminal (scripts, parches, `engine/`, `player/`)
+  se distribuye bajo la licencia [MIT](LICENSE).
 - [nchat](https://github.com/d99kris/nchat) se distribuye bajo la licencia MIT.
 - [whatsmeow](https://github.com/tulir/whatsmeow) se distribuye bajo la Mozilla
   Public License 2.0, sin modificaciones (incluido en el código de nchat).
+- La fuente [Noto Emoji](https://github.com/googlefonts/noto-emoji) se distribuye
+  bajo la SIL Open Font License 1.1 (`licenses/OFL.txt` en el paquete).
 - El **binario combinado** del paquete se distribuye bajo la **GNU GPL v3**,
-  igual que los binarios de nchat sin Signal. Las licencias completas de nchat,
-  whatsmeow, libopus y las librerías estáticas van en `licenses/` dentro del
-  paquete. El código fuente correspondiente es este repositorio más el commit de
-  nchat indicado en `build.sh`.
+  igual que los binarios de nchat sin Signal.
+- `licenses/` dentro del paquete trae las licencias completas de todo lo que va
+  en él: OldieChat, nchat, whatsmeow y sus dependencias Go, libopus, Go, musl, el
+  runtime de GCC (con su excepción), las librerías estáticas (OpenSSL, zlib,
+  ncurses, SQLite, libmagic y sus compresores) y Noto Emoji. Los datos de zonas
+  horarias (tzdata) son de dominio público.
+- El código fuente correspondiente es este repositorio más el commit de nchat
+  indicado en `versions.env`, y se publica completo en cada versión.
 
 ## Créditos
 
