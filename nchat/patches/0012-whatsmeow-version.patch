@@ -1,0 +1,26 @@
+diff --git a/lib/wmchat/THIRD_PARTY_LICENSES b/lib/wmchat/THIRD_PARTY_LICENSES
+index be0c2e46..7a8b94fa 100644
+--- a/lib/wmchat/THIRD_PARTY_LICENSES
++++ b/lib/wmchat/THIRD_PARTY_LICENSES
+@@ -1587,7 +1587,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
+ 
+ 
+ --------------------------------------------------------------------------------
+-go.mau.fi/whatsmeow  20261016  (MPL-2.0)
++go.mau.fi/whatsmeow  20261017  (MPL-2.0)
+ https://github.com/tulir/whatsmeow
+ --------------------------------------------------------------------------------
+ 
+diff --git a/lib/wmchat/go/gowm.go b/lib/wmchat/go/gowm.go
+index d2c63495..1626b88a 100644
+--- a/lib/wmchat/go/gowm.go
++++ b/lib/wmchat/go/gowm.go
+@@ -50,7 +50,7 @@ import (
+ 	waLog "go.mau.fi/whatsmeow/util/log"
+ )
+ 
+-var whatsmeowDate int = 20261016
++var whatsmeowDate int = 20261017
+ 
+ type JSONMessage []json.RawMessage
+ type JSONMessageType string

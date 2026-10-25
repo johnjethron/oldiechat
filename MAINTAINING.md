@@ -117,7 +117,9 @@ scripts/update-whatsmeow.sh <commit>   # o uno en particular
 Fija `WHATSMEOW_COMMIT` en `versions.env` y ejecuta `scripts/vendor-go.sh`,
 que usa `utils/whatsmeow-update` de nchat (copia whatsmeow, aplica el parche de
 nchat, cambia la fecha en `gowm.go` y hace `go mod tidy`) y guarda las
-dependencias de la terminal y del motor. Después: `./build.sh` y
+dependencias de la terminal y del motor. Lo pequeño que cambia en nchat (fecha,
+`go.mod`, `go.sum`, licencias) queda en `nchat/patches/0012-whatsmeow-version.patch`,
+para compilar sin internet; no se edita a mano. Después: `./build.sh` y
 `scripts/phone-test.sh`.
 
 Si se detiene en `.rej`, el parche de nchat

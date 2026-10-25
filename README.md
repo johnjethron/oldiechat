@@ -328,6 +328,7 @@ Parches aplicados a nchat (`nchat/patches/`):
 | 0009 | Atajos simples, volver, guía (`guide.txt`) y cursor siempre al final. |
 | 0010 | Audios como `audio mm.ss`. |
 | 0011 | Anchos de carácter de la terminal (medidos en el teléfono) en lugar de los de la biblioteca C. |
+| 0012 | Versión de whatsmeow (fecha, `go.mod`, licencias); la genera `scripts/update-whatsmeow.sh`. |
 
 Los parches al runtime de Go, si alguna vez hacen falta, van en `go/patches/`
 (ver [MAINTAINING.md](MAINTAINING.md)).
