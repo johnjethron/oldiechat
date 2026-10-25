@@ -149,40 +149,34 @@ normally and OldieChat gets its own icon.
 
 ## Shortcuts
 
-Volume up = **Fn**, Volume down = **Ctrl**. Press and release a modifier before
-the key; pressed twice it stays locked until you press it again.
+One rule: **Volume up = move**, **Volume down = action**, using the Spanish
+initial. Press and release the volume button before the letter. The same table
+appears on the phone with Volume down + G.
 
 | Keys | Action |
 | --- | --- |
+| Vol. up + W | go up in the conversation (selects messages) |
+| Vol. up + S | go down in the conversation (at the end you are back to typing) |
+| Vol. up + A | previous chat |
+| Vol. up + D | next chat |
 | Enter | send message |
-| Fn+0 | line break |
-| Fn+1 / Fn+2 | previous / next conversation |
-| Fn+3 | next unread conversation |
-| Fn+4 | find conversation by name |
-| Fn+5 | show or hide the list |
-| Fn+6 | insert emoji |
-| Fn+7 | react to the selected message |
-| Fn+8 | on-screen help |
-| Fn+9 | switch between regular and **archived** chats |
-| Fn+W / Fn+S | up / down one message (selects the message) |
-| Fn+P / Fn+N | up / down one page |
-| Ctrl+9 | play the selected voice note (again: stop) |
-| Ctrl+0 | stop playback |
-| Ctrl+Q | quit |
+| Enter on a voice note | play; again: stop |
+| Vol. down + A | **A**rchivados: show or hide archived chats |
+| Vol. down + B | **B**uscar: find a chat by name |
+| Vol. down + G | **G**uía: this table |
+| Vol. down + S | **S**alir: quit |
 
-All other nchat shortcuts remain available with Ctrl (see
-[nchat](https://github.com/d99kris/nchat#usage)).
-
-**Taps**: tapping a name in the list opens that conversation. Two taps in a row
-(within 3 seconds) on the input area open or close the keyboard. The Back button
-also closes the keyboard.
-
-**Archived**: Fn+9 switches the list to show only archived chats and the status
-bar shows `[Archivados]`. Fn+9 again goes back to the regular list.
-
-**Voice notes**: select the voice message with Fn+W/Fn+S and press Ctrl+9. It is
-downloaded, converted and played in the background after 1–2 seconds. Ctrl+0
-stops it; it also stops when you quit.
+- A and D switch chats only when the input field is empty; while typing they move
+  the cursor.
+- Enter on a selected message that is not a voice note takes you back to typing.
+- **Taps**: tapping a name in the list opens that conversation. Two taps in a row
+  (within 3 seconds) on the input area open or close the keyboard. The Back
+  button also closes it.
+- **Archived**: the status bar shows `[Archivados]` while that list is shown; it
+  includes all your archived chats.
+- **Voice notes**: they are downloaded, converted and played in the background
+  after 1–2 seconds, and stop when you quit. If one does not play, every step is
+  logged in `/data/local/tmp/oldiechat/home/audio.log`.
 
 ## If you later use `adb shell` without root
 
@@ -200,8 +194,7 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
   emoticons (`:)`, `XD`, `<3`), because that font draws them as Android robots.
   Messages are sent with the original emoji.
 - **Scrolling with the volume buttons**: in TermOne Plus a volume button set as a
-  modifier cannot also send a key of its own, so scrolling uses Fn+W/S and
-  Fn+P/N.
+  modifier cannot also send a key of its own, so scrolling uses Volume up + W/S.
 - **Keyboard**: with "Send mouse events" on, TermOne Plus does not open the
   keyboard on a single tap; OldieChat works around it with the double tap on the
   input area.
@@ -212,6 +205,23 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
 - Only tested on a Galaxy Fame. Other rooted Android 4.x ARMv7 phones should
   work; for good emoji rendering on another model, generate `glyphs.txt` from its
   fonts (see below).
+
+## Compatibility
+
+OldieChat exists to keep old phones working, so everything needed to build it is
+pinned and stored:
+
+- Exact versions of Alpine, Go, nchat, whatsmeow, libopus and the Java compiler in
+  a single file, [`versions.env`](versions.env), with checksums.
+- Go dependencies stored in the repository (`third_party/`, `engine/vendor/`) and
+  patches in `patches/`.
+- Every release also ships a package with the complete source code.
+- `scripts/check-go-version.sh` warns when whatsmeow or nchat start requiring a
+  newer Go, and `scripts/phone-test.sh` tests the phone (startup, DNS, HTTPS,
+  audio) before each release.
+
+What to do if Go stops working on an old kernel, whatsmeow requires a newer Go or
+certificates expire: [MAINTAINING.md](MAINTAINING.md) (in Spanish).
 
 ## Building from source
 
@@ -244,8 +254,11 @@ tools/glyphs.sh
 - **nchat** is built with WhatsApp enabled and Telegram and Signal disabled,
   inside an Alpine armv7 (musl) container, with a patched Go (Go PR #69325,
   required for the whatsmeow part on musl), linked with `-static -no-pie`.
-- **oldiechat-audio** (`audio/`, Go + libopus) converts Ogg Opus voice notes to
-  WAV. The `oggopus` package is meant to be reused by the future app's engine.
+- **The engine** (`engine/`, Go) is independent of nchat and is the base of the
+  future Android app: Opus→WAV conversion (`oldiechat-audio` uses it), DNS and
+  certificates without root, time zone, and a messaging core on top of whatsmeow
+  (`oldiechat-engine`). See [docs/APP_ARCHITECTURE.md](docs/APP_ARCHITECTURE.md)
+  (in Spanish).
 - **player.jar** (`player/`, Java) plays audio with Android's `MediaPlayer`,
   launched with `app_process`, without installing an app.
 - **oldiechat.sh** sets up the environment: terminfo, time zone (Android uses
@@ -262,18 +275,26 @@ Patches applied to nchat (`patches/`):
 | 0005 | Use `/system/bin/sh` on Android to run external commands. |
 | 0006 | Archived chats view (`toggle_archived`). |
 | 0007 | `stop` key and `attachment_stop_command` option. |
+| 0008 | Log every attempt to open an attachment and the command it runs. |
+| 0009 | List all stored archived chats, even without recent messages. |
+| 0010 | Simple keys: left/right switch chats, Enter on a voice note plays it, guide (`guide.txt`). |
 
 ### Layout
 
 ```
 build.sh            full build
 Dockerfile.armv7    Alpine armv7 image
+versions.env        exact versions and checksums
 patches/            nchat patches
-audio/              Opus -> WAV converter (Go)
+engine/             Go engine: audio, network, time zone, messaging
 player/             player (Java, app_process)
 files/              scripts and icon shipped in the package
 config/             key.conf, ui.conf, glyphs.txt
+scripts/            phone tests, Go version check, vendoring
+third_party/        nchat Go dependencies (go mod vendor)
+tests/data/         test audio
 tools/              glyphs.txt and icon generators
+docs/               future app architecture
 ```
 
 ## Licenses

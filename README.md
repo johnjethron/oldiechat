@@ -151,40 +151,34 @@ abriéndose normal y OldieChat tiene su propio ícono.
 
 ## Atajos
 
-Volumen arriba = **Fn**, Volumen abajo = **Ctrl**. Un modificador se aprieta y se
-suelta antes de la tecla; apretado dos veces queda fijo hasta volver a apretarlo.
+Una sola regla: **Volumen arriba = moverse**, **Volumen abajo = acción**, con la
+inicial en español. El botón de volumen se aprieta y se suelta antes de la
+letra. La misma tabla aparece en el teléfono con Volumen abajo + G.
 
-| Teclas | Acción |
+| Teclas | Qué hace |
 | --- | --- |
+| Vol. arriba + W | subir en la conversación (selecciona mensajes) |
+| Vol. arriba + S | bajar en la conversación (al final vuelves a escribir) |
+| Vol. arriba + A | chat anterior |
+| Vol. arriba + D | chat siguiente |
 | Enter | enviar mensaje |
-| Fn+0 | salto de línea |
-| Fn+1 / Fn+2 | conversación anterior / siguiente |
-| Fn+3 | siguiente conversación no leída |
-| Fn+4 | buscar conversación por nombre |
-| Fn+5 | mostrar u ocultar la lista |
-| Fn+6 | insertar emoji |
-| Fn+7 | reaccionar al mensaje seleccionado |
-| Fn+8 | ayuda en pantalla |
-| Fn+9 | alternar entre chats normales y **archivados** |
-| Fn+W / Fn+S | subir / bajar de a un mensaje (selecciona el mensaje) |
-| Fn+P / Fn+N | subir / bajar una página |
-| Ctrl+9 | reproducir el audio seleccionado (otra vez: detener) |
-| Ctrl+0 | detener el audio |
-| Ctrl+Q | salir |
+| Enter sobre un audio | escuchar; otra vez: detener |
+| Vol. abajo + A | **A**rchivados (mostrar u ocultar) |
+| Vol. abajo + B | **B**uscar chat por nombre |
+| Vol. abajo + G | **G**uía (esta tabla) |
+| Vol. abajo + S | **S**alir |
 
-El resto de los atajos de nchat siguen disponibles con Ctrl (ver
-[nchat](https://github.com/d99kris/nchat#usage)).
-
-**Toques**: tocar un nombre de la lista abre esa conversación. Dos toques
-seguidos (en menos de 3 segundos) en el área de escritura abren o cierran el
-teclado. El botón Atrás también cierra el teclado.
-
-**Archivados**: Fn+9 cambia la lista para mostrar solo los chats archivados y la
-barra de estado muestra `[Archivados]`. Fn+9 otra vez vuelve a la lista normal.
-
-**Audios**: selecciona el mensaje de voz con Fn+W/Fn+S y aprieta Ctrl+9. El audio
-se descarga, se convierte y suena en segundo plano después de 1 o 2 segundos.
-Ctrl+0 lo detiene; también se detiene al salir.
+- A y D cambian de chat solo cuando el campo de escritura está vacío; si estás
+  escribiendo, mueven el cursor.
+- Enter sobre un mensaje seleccionado que no es audio te devuelve a escribir.
+- **Toques**: tocar un nombre de la lista abre esa conversación. Dos toques
+  seguidos (en menos de 3 segundos) en el área de escritura abren o cierran el
+  teclado. El botón Atrás también lo cierra.
+- **Archivados**: la barra de estado muestra `[Archivados]` mientras ves esa
+  lista, que incluye todos tus chats archivados.
+- **Audios**: el audio se descarga, se convierte y suena en segundo plano después
+  de 1 o 2 segundos, y se detiene al salir. Si no suena, el detalle de cada paso
+  queda en `/data/local/tmp/oldiechat/home/audio.log`.
 
 ## Si después usas `adb shell` sin root
 
@@ -203,7 +197,7 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
   dibujos del robot de Android. Los mensajes se envían con los emoji originales.
 - **Desplazamiento con los botones de volumen**: en TermOne Plus un botón de
   volumen configurado como modificador no puede además enviar una tecla propia;
-  por eso se desplaza con Fn+W/S y Fn+P/N.
+  por eso se desplaza con Volumen arriba + W/S.
 - **Teclado**: con "Enviar eventos de ratón" activado, TermOne Plus no abre el
   teclado con un toque simple; OldieChat lo resuelve con el doble toque en el
   área de escritura.
@@ -214,6 +208,23 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
 - Solo se ha probado en un Galaxy Fame. Otros Android 4.x ARMv7 con root
   deberían funcionar; para que los emoji se vean bien en otro modelo, genera
   `glyphs.txt` con sus fuentes (ver más abajo).
+
+## Compatibilidad
+
+OldieChat existe para que los teléfonos antiguos sigan funcionando, así que todo
+lo necesario para compilarlo queda fijado y guardado:
+
+- Versiones exactas de Alpine, Go, nchat, whatsmeow, libopus y del compilador
+  Java en un solo archivo, [`versions.env`](versions.env), con sus checksums.
+- Las dependencias Go guardadas en el repositorio (`third_party/`,
+  `engine/vendor/`) y los parches en `patches/`.
+- Cada versión publica también un paquete con el código fuente completo.
+- `scripts/check-go-version.sh` avisa si whatsmeow o nchat empiezan a exigir un
+  Go más nuevo, y `scripts/phone-test.sh` prueba el teléfono (arranque, DNS,
+  HTTPS, audio) antes de cada versión.
+
+Qué hacer si Go deja de funcionar en un kernel antiguo, si whatsmeow exige un Go
+más nuevo o si vencen los certificados: [MAINTAINING.md](MAINTAINING.md).
 
 ## Compilar desde el código
 
@@ -248,9 +259,11 @@ tools/glyphs.sh
   dentro de un contenedor Alpine armv7 (musl), con Go parcheado (Go PR #69325,
   necesario para la parte de whatsmeow en musl) y enlazado con
   `-static -no-pie`.
-- **oldiechat-audio** (`audio/`, Go + libopus) convierte notas de voz Ogg Opus a
-  WAV. El paquete `oggopus` está pensado para reutilizarse en el motor de la
-  futura app.
+- **El motor** (`engine/`, Go) es independiente de nchat y es la base de la
+  futura app Android: conversión Opus→WAV (`oldiechat-audio`, que usa este
+  paquete), DNS y certificados sin root, zona horaria y un núcleo de mensajería
+  sobre whatsmeow (`oldiechat-engine`). Ver
+  [docs/APP_ARCHITECTURE.md](docs/APP_ARCHITECTURE.md).
 - **player.jar** (`player/`, Java) reproduce con el `MediaPlayer` de Android,
   lanzado con `app_process`, sin instalar ninguna app.
 - **oldiechat.sh** prepara el entorno: terminfo, zona horaria (Android usa un
@@ -267,18 +280,26 @@ Parches aplicados a nchat (`patches/`):
 | 0005 | Usar `/system/bin/sh` en Android para ejecutar comandos externos. |
 | 0006 | Vista de chats archivados (`toggle_archived`). |
 | 0007 | Tecla `stop` y opción `attachment_stop_command`. |
+| 0008 | Registrar en el log cada intento de abrir un adjunto y el comando lanzado. |
+| 0009 | Listar todos los chats archivados guardados, aunque no tengan mensajes recientes. |
+| 0010 | Atajos simples: flechas izquierda/derecha cambian de chat, Enter sobre un audio lo reproduce, guía (`guide.txt`). |
 
 ### Estructura
 
 ```
 build.sh            compilación completa
 Dockerfile.armv7    imagen Alpine armv7
+versions.env        versiones exactas y checksums
 patches/            parches a nchat
-audio/              conversor Opus -> WAV (Go)
+engine/             motor Go: audio, red, zona horaria, mensajería
 player/             reproductor (Java, app_process)
 files/              scripts e ícono que van en el paquete
 config/             key.conf, ui.conf, glyphs.txt
+scripts/            pruebas en el teléfono, versión de Go, vendor
+third_party/        dependencias Go de nchat (go mod vendor)
+tests/data/         audio de prueba
 tools/              generador de glyphs.txt e ícono
+docs/               arquitectura de la futura app
 ```
 
 ## Licencias
