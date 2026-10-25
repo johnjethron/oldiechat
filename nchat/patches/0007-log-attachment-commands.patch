@@ -1,5 +1,5 @@
 diff --git a/src/uimodel.cpp b/src/uimodel.cpp
-index f6a0485b..bcb46e5a 100644
+index 548ce984..99cc0e2f 100644
 --- a/src/uimodel.cpp
 +++ b/src/uimodel.cpp
 @@ -1241,12 +1241,22 @@ void UiModel::Impl::OnKeyOpenAttachment(std::string p_FilePath /*= std::string()
@@ -27,7 +27,7 @@ index f6a0485b..bcb46e5a 100644
    }
  
    OpenAttachment(p_FilePath);
-@@ -1326,7 +1336,7 @@ void UiModel::Impl::RunProgram(const std::string& p_Cmd)
+@@ -1315,7 +1325,7 @@ void UiModel::Impl::RunProgram(const std::string& p_Cmd)
    }
  
    // run command

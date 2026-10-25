@@ -32,8 +32,39 @@ for d in "$HOME" "$HOME/tmp" "$HOME/.config"; do
   [ -d "$d" ] || mkdir "$d" || exit 1
 done
 
+# consultas que no abren la interfaz: no cierran otra sesión ni detienen el audio
+case "$1" in
+  -v|--version|-h|--help) exec "$D/bin/nchat" -d "$HOME/.config/nchat" "$@" ;;
+esac
+
 # registro del audio: se conserva solo la sesión anterior
 [ ! -f "$HOME/audio.log" ] || mv "$HOME/audio.log" "$HOME/audio.log.1"
+
+# un solo OldieChat a la vez: si quedó abierto en otra ventana de la terminal,
+# se cierra antes (si no, este nchat termina en el acto por el bloqueo del perfil)
+running_pid() {
+  ps | while read -r line; do
+    set -- $line
+    eval "name=\${$#}"
+    [ "$name" = "$D/bin/nchat" ] && echo "$2"
+  done
+}
+old="$(running_pid)"
+if [ -n "$old" ]; then
+  kill -HUP $old 2>/dev/null
+  i=0
+  while [ -n "$(running_pid)" ] && [ $i -lt 10 ]; do
+    sleep 1
+    i=$((i + 1))
+  done
+fi
+
+# registros de nchat: nchat solo guarda la sesión anterior (log.txt.1); se
+# conservan las últimas 6
+L="$HOME/.config/nchat/log.txt"
+for i in 4 3 2 1; do
+  [ ! -f "$L.$i" ] || mv "$L.$i" "$L.$((i + 1))"
+done
 
 "$D/bin/nchat" -d "$HOME/.config/nchat" "$@"
 rc=$?

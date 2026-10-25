@@ -4,7 +4,8 @@
 # estático musl para ARMv7, más el conversor y el reproductor de audio.
 #
 # Requisitos en el host (x86_64): docker, qemu-user-static, binfmt-support, curl.
-# Versiones exactas: versions.env. Dependencias Go: third_party/ y engine/vendor/.
+# Versiones exactas: versions.env. Parches: nchat/patches/ y go/patches/.
+# Dependencias Go: nchat/vendor/ y engine/vendor/.
 # Resultado: out/oldiechat-terminal-<versión>-armv7/            (paquete)
 #            out/oldiechat-terminal-<versión>-armv7.tar.gz       (para Releases)
 #            out/oldiechat-terminal-<versión>-source.tar.gz      (código fuente completo)
@@ -52,16 +53,16 @@ fetch_source() {
   git -C "${SRC}" checkout --quiet --force "${NCHAT_COMMIT}"
 
   local p
-  for p in "${HERE}"/patches/*.patch; do
+  for p in "${HERE}"/nchat/patches/*.patch; do
     [[ -e "${p}" ]] || continue
     log "Aplicando $(basename "${p}")"
     git -C "${SRC}" apply "${p}"
   done
 
   # dependencias Go de nchat guardadas en el repositorio (scripts/vendor-go.sh)
-  if [[ -d "${HERE}/third_party/wmchat-vendor" ]]; then
+  if [[ -d "${HERE}/nchat/vendor" ]]; then
     rm -rf "${SRC}/lib/wmchat/go/vendor"
-    cp -r "${HERE}/third_party/wmchat-vendor" "${SRC}/lib/wmchat/go/vendor"
+    cp -r "${HERE}/nchat/vendor" "${SRC}/lib/wmchat/go/vendor"
   fi
 }
 
@@ -71,6 +72,8 @@ build_image() {
   rm -rf "${ctx}"; mkdir -p "${ctx}"
   cp "${HERE}/Dockerfile.armv7" "${ctx}/Dockerfile"
   cp "${SRC}/utils/dist/patches/go-pr69325-musl-argv.patch" "${ctx}/"
+  mkdir -p "${ctx}/go-patches"
+  cp "${HERE}"/go/patches/*.patch "${ctx}/go-patches/" 2>/dev/null || true
   docker build --platform "${PLATFORM}" -t "${IMAGE}" \
     --build-arg ALPINE_IMAGE="${ALPINE_IMAGE}" \
     --build-arg GO_VERSION="${GO_VERSION}" --build-arg GO_SHA256="${GO_SHA256}" \
@@ -85,8 +88,8 @@ run_in_container() {
     -e HOME=/work/cache -e GOCACHE=/work/cache/go-build -e GOPATH=/work/cache/go \
     -e GOFLAGS="-mod=vendor -modcacherw" -e GOPROXY=off -e GOTOOLCHAIN=local \
     -e JOBS="${JOBS}" -e TERMS="${TERMS}" -e NAME="${NAME}" \
-    -v "${WORK}:/work" -v "${HERE}/out:/out" -v "${HERE}/files:/files:ro" \
-    -v "${HERE}/config:/config:ro" -v "${HERE}/engine:/engine:ro" -v "${HERE}/LICENSE:/LICENSE:ro" \
+    -v "${WORK}:/work" -v "${HERE}/out:/out" -v "${HERE}/phone:/phone:ro" \
+    -v "${HERE}/engine:/engine:ro" -v "${HERE}/LICENSE:/LICENSE:ro" \
     -w /work "${IMAGE}" "$@"
 }
 
@@ -106,6 +109,7 @@ compile() {
       -DHAS_SIGNAL=OFF \
       -DHAS_DUMMY=OFF \
       -DHAS_COREDUMP=OFF \
+      -DHAS_MULTIPROTOCOL=OFF \
       -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie"
     grep -q "^HAS_WHATSAPP:BOOL=ON" "$B/CMakeCache.txt"
     cmake --build "$B" -j "$JOBS"
@@ -135,9 +139,9 @@ compile() {
     cp -r /usr/share/zoneinfo "$O/zoneinfo"
     rm -rf "$O/zoneinfo/posix" "$O/zoneinfo/right"
 
-    cp /files/oldiechat.sh /files/audio.sh /files/install.sh /files/oldiechat.png "$O/"
-    cp /config/*.conf "$O/config/"
-    cp /config/glyphs.txt /config/guide.txt "$O/config/"
+    cp /phone/oldiechat.sh /phone/audio.sh /phone/install.sh /phone/oldiechat.png "$O/"
+    cp /phone/config/* "$O/config/"
+    mkdir -p "$O/fonts"; cp /phone/fonts/* "$O/fonts/"
 
     # licencias: el binario combinado se distribuye bajo GPL v3 (ver nchat)
     cp /LICENSE "$O/licenses/LICENSE.oldiechat"
@@ -149,7 +153,6 @@ compile() {
 
     chmod -R u=rwX,go=rX "$O"
     chmod 755 "$O/oldiechat.sh" "$O/audio.sh" "$O/install.sh" "$O/bin/nchat" "$O/bin/oldiechat-audio"
-    file "$O/bin/nchat" "$O/bin/oldiechat-audio"
   '
 }
 

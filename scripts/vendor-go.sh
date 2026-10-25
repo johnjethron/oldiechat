@@ -3,8 +3,8 @@
 # vendor-go.sh - guarda en el repositorio las dependencias Go (go mod vendor),
 # para poder compilar aunque algún módulo desaparezca de internet.
 #
-#   third_party/wmchat-vendor/  dependencias de la parte Go de nchat (con parches)
-#   engine/vendor/              dependencias del motor
+#   nchat/vendor/   dependencias de la parte Go de nchat (con parches)
+#   engine/vendor/  dependencias del motor
 #
 # Se ejecuta en el contenedor de compilación, con el Go fijado. Necesita
 # work/nchat (ejecuta antes ./build.sh) y acceso a internet.
@@ -22,7 +22,7 @@ SRC="${HERE}/work/nchat"
 echo "==> nchat @ ${NCHAT_COMMIT:0:7} con parches"
 git -C "${SRC}" checkout --quiet --force "${NCHAT_COMMIT}"
 git -C "${SRC}" clean -qfdx lib/wmchat/go
-for p in "${HERE}"/patches/*.patch; do
+for p in "${HERE}"/nchat/patches/*.patch; do
   git -C "${SRC}" apply "${p}"
 done
 
@@ -35,7 +35,6 @@ docker run --rm --platform linux/arm/v7 --user "$(id -u):$(id -g)" \
     cd /engine && go mod vendor
   '
 
-rm -rf "${HERE}/third_party/wmchat-vendor"
-mkdir -p "${HERE}/third_party"
-mv "${SRC}/lib/wmchat/go/vendor" "${HERE}/third_party/wmchat-vendor"
-du -sh "${HERE}/third_party/wmchat-vendor" "${HERE}/engine/vendor"
+rm -rf "${HERE}/nchat/vendor"
+mv "${SRC}/lib/wmchat/go/vendor" "${HERE}/nchat/vendor"
+du -sh "${HERE}/nchat/vendor" "${HERE}/engine/vendor"

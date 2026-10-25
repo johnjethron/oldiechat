@@ -63,10 +63,10 @@ index f88ef38f..37d3a2d1 100644
  
  	LOG_DEBUG("logout " + strconv.Itoa(connId))
 diff --git a/src/uimodel.cpp b/src/uimodel.cpp
-index bcb46e5a..c56a4866 100644
+index 99cc0e2f..3b259624 100644
 --- a/src/uimodel.cpp
 +++ b/src/uimodel.cpp
-@@ -2379,7 +2379,16 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
+@@ -2368,7 +2368,16 @@ void UiModel::Impl::MessageHandler(std::shared_ptr<ServiceMessage> p_ServiceMess
          std::string chatId = updateArchivedNotify->chatId;
          bool isArchived = updateArchivedNotify->isArchived;
          LOG_TRACE("archived notify %s is %s", chatId.c_str(), (isArchived ? "archived" : "unarchived"));

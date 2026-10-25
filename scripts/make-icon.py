@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # make-icon.py - dibuja el ícono de OldieChat (PNG 192x192) sin librerías externas.
-# Uso: make-icon.py <salida.png>
+# Uso: scripts/make-icon.py phone/oldiechat.png
 
 import math
 import struct

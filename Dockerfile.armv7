@@ -10,14 +10,13 @@ ARG ALPINE_IMAGE=alpine:3.24
 FROM ${ALPINE_IMAGE}
 
 RUN apk add --no-cache \
-    bash build-base cmake git gperf linux-headers patch pkgconf samurai file \
+    bash build-base cmake git patch pkgconf samurai \
     ncurses-dev ncurses-static ncurses-terminfo \
     sqlite-dev sqlite-static \
     openssl-dev openssl-libs-static \
     zlib-dev zlib-static \
     file-dev libmagic-static \
-    tzdata \
-    python3 py3-fonttools
+    tzdata
 
 # Go oficial (binarios estáticos, corren sobre musl) parcheado con Go PR #69325:
 # sin el parche, una c-archive de Go se cae al arrancar en musl (nchat #204).
@@ -26,12 +25,15 @@ RUN apk add --no-cache \
 ARG GO_VERSION
 ARG GO_SHA256
 COPY go-pr69325-musl-argv.patch /tmp/go-musl-argv.patch
+# parches propios al runtime de Go (go/patches/, ver MAINTAINING.md)
+COPY go-patches/ /tmp/go-patches/
 RUN set -eu; \
     wget -q "https://go.dev/dl/go${GO_VERSION}.linux-armv6l.tar.gz" -O /tmp/go.tar.gz && \
     echo "${GO_SHA256}  /tmp/go.tar.gz" | sha256sum -c - && \
     tar -C /usr/local -xzf /tmp/go.tar.gz && \
     patch -p1 -d /usr/local/go < /tmp/go-musl-argv.patch && \
-    rm /tmp/go.tar.gz /tmp/go-musl-argv.patch && \
+    for p in /tmp/go-patches/*.patch; do [ ! -f "$p" ] || patch -p1 -d /usr/local/go < "$p"; done && \
+    rm -r /tmp/go.tar.gz /tmp/go-musl-argv.patch /tmp/go-patches && \
     /usr/local/go/bin/go version
 ENV PATH=/usr/local/go/bin:${PATH} \
     GOTOOLCHAIN=local \

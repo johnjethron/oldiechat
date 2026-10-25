@@ -1,0 +1,8 @@
+Vol. arriba + W/S   mensajes
+Vol. arriba + A/D   chats
+Vol. abajo + A      archivados
+Vol. abajo + G      esta guía
+Vol. abajo + S      volver
+Enter               enviar
+Enter en un audio   escuchar
+Volumen 2 veces     queda fijo

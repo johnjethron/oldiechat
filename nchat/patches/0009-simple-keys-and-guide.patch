@@ -1,0 +1,367 @@
+diff --git a/src/uiconfig.cpp b/src/uiconfig.cpp
+index e0a29905..b4ef0f1a 100644
+--- a/src/uiconfig.cpp
++++ b/src/uiconfig.cpp
+@@ -20,7 +20,10 @@ void UiConfig::Init()
+   {
+     { "attachment_indicator", "\xF0\x9F\x93\x8E" },
+     { "archived_list_indicator", "[archived]" },
++    { "arrows_switch_chat", "0" },
+     { "attachment_open_command", "" },
++    { "back_confirm_quit", "1" },
++    { "back_quit_text", "Press back again to quit,\\nany other key to stay" },
+     { "auto_compose_command", "" },
+     { "auto_compose_enabled", "0" },
+     { "auto_compose_history_count", "25" },
+@@ -40,6 +43,8 @@ void UiConfig::Init()
+     { "downloadable_indicator", "+" },
+     { "edited_indicator", "\xe2\x9c\x8e" },
+     { "emoji_enabled", "1" },
++    { "enter_opens_selected", "0" },
++    { "entry_cursor_end", "0" },
+     { "entry_height", "4" },
+     { "failed_indicator", "\xe2\x9c\x97" },
+     { "file_picker_command", "" },
+diff --git a/src/uidialog.cpp b/src/uidialog.cpp
+index 4d185502..6339fcdc 100644
+--- a/src/uidialog.cpp
++++ b/src/uidialog.cpp
+@@ -32,8 +32,8 @@ void UiDialog::Init()
+ {
+   int screenW = m_Model->GetScreenWidth();
+   int screenH = m_Model->GetScreenHeight();
+-  int w = (m_WReq > 1.0f) ? m_WReq : (screenW * m_WReq);
+-  int h = (m_HReq > 1.0f) ? m_HReq : (screenH * m_HReq);
++  int w = std::min(screenW, (int)((m_WReq > 1.0f) ? m_WReq : (screenW * m_WReq)));
++  int h = std::min(screenH, (int)((m_HReq > 1.0f) ? m_HReq : (screenH * m_HReq)));
+   int x = (screenW - w) / 2;
+   int y = (screenH - h) / 3;
+ 
+diff --git a/src/uikeyconfig.cpp b/src/uikeyconfig.cpp
+index 66edcaa1..5ef086af 100644
+--- a/src/uikeyconfig.cpp
++++ b/src/uikeyconfig.cpp
+@@ -233,6 +233,9 @@ void UiKeyConfig::Init(bool p_MapKeys)
+     { "toggle_help", "KEY_CTRLG" },
+     { "toggle_list", "KEY_CTRLL" },
+     { "toggle_archived", "KEY_NONE" },
++    { "guide", "KEY_NONE" },
++    { "back", "KEY_NONE" },
++    { "back_alt", "KEY_NONE" },
+     { "toggle_top", "KEY_NONE" },
+     { "next_chat", "KEY_TAB" },
+     { "prev_chat", "KEY_BTAB" },
+@@ -411,7 +414,7 @@ void UiKeyConfig::DetectConflicts()
+     const std::string& keyFunction = it->first;
+     const std::string& keyCode = it->second;
+ 
+-    if (ignoreKeyFunctions.count(keyFunction)) continue;
++    if (ignoreKeyFunctions.count(keyFunction) || (keyCode == "KEY_NONE")) continue;
+ 
+     std::vector<std::string>& keyMapping = keyMappings[keyCode];
+     keyMapping.push_back(keyFunction);
+diff --git a/src/uimessagedialog.cpp b/src/uimessagedialog.cpp
+index f5af7384..521b31b4 100644
+--- a/src/uimessagedialog.cpp
++++ b/src/uimessagedialog.cpp
+@@ -17,9 +17,10 @@
+ #include "uimodel.h"
+ #include "uiview.h"
+ 
+-UiMessageDialog::UiMessageDialog(const UiDialogParams& p_Params, const std::string& p_Message)
++UiMessageDialog::UiMessageDialog(const UiDialogParams& p_Params, const std::string& p_Message, bool p_Guide)
+   : UiDialog(p_Params)
+   , m_Message(p_Message)
++  , m_Guide(p_Guide)
+ {
+   m_Model->SetMessageDialogActive(true);
+   m_Model->Draw();
+@@ -55,8 +56,17 @@ void UiMessageDialog::KeyHandler(wint_t p_Key)
+   static wint_t keyTerminalFocusOut = UiKeyConfig::GetKey("terminal_focus_out");
+   static wint_t keyTerminalResize = UiKeyConfig::GetKey("terminal_resize");
+ 
++  static wint_t keyBack = UiKeyConfig::GetKey("back");
++  static wint_t keyBackAlt = UiKeyConfig::GetKey("back_alt");
++
+   bool isDirty = true;
+-  if (p_Key == keyTerminalResize)
++  if (m_Guide && (p_Key != keyTerminalResize) && (p_Key != keyTerminalFocusIn) && (p_Key != keyTerminalFocusOut))
++  {
++    // text dialog: any key closes, the result tells whether it was the back key
++    m_Result = (p_Key == keyBack) || (p_Key == keyBackAlt);
++    m_Running = false;
++  }
++  else if (p_Key == keyTerminalResize)
+   {
+     Cleanup();
+     m_Model->SetHelpOffset(0);
+@@ -121,7 +131,7 @@ void UiMessageDialog::Draw()
+   {
+     const std::wstring& wdisp = wlines.at(i);
+     int w = std::min((int)wdisp.size(), m_W);
+-    int x = std::max(0, ((m_W - w) / 2));
++    int x = m_Guide ? 1 : std::max(0, ((m_W - w) / 2));
+     mvwaddnwstr(m_Win, i + 1, x, wdisp.c_str(), w);
+   }
+ 
+diff --git a/src/uimessagedialog.h b/src/uimessagedialog.h
+index b799d8bb..3f7f5d9e 100644
+--- a/src/uimessagedialog.h
++++ b/src/uimessagedialog.h
+@@ -15,7 +15,7 @@
+ class UiMessageDialog : public UiDialog
+ {
+ public:
+-  UiMessageDialog(const UiDialogParams& p_Params, const std::string& p_Message);
++  UiMessageDialog(const UiDialogParams& p_Params, const std::string& p_Message, bool p_Guide = false);
+   virtual ~UiMessageDialog();
+ 
+   bool Run();
+@@ -28,4 +28,5 @@ protected:
+   bool m_Running = true;
+   bool m_Result = false;
+   std::string m_Message;
++  bool m_Guide = false;
+ };
+diff --git a/src/uimodel.cpp b/src/uimodel.cpp
+index 3b259624..4f345597 100644
+--- a/src/uimodel.cpp
++++ b/src/uimodel.cpp
+@@ -293,6 +293,13 @@ void UiModel::Impl::EntryKeyHandler(wint_t p_Key)
+   const int messageCount = m_Messages[profileId][chatId].size();
+   int& messageOffset = m_MessageOffset[profileId][chatId];
+ 
++  // the cursor stays at the end: text is only corrected by deleting
++  static const bool cursorEnd = UiConfig::GetBool("entry_cursor_end");
++  if (cursorEnd)
++  {
++    entryPos = entryStr.size();
++  }
++
+   if (p_Key == keyUp)
+   {
+     if (GetSelectMessageActive() && !GetEditMessageActive())
+@@ -302,11 +309,11 @@ void UiModel::Impl::EntryKeyHandler(wint_t p_Key)
+     }
+     else
+     {
+-      if ((entryPos == 0) && (messageCount > 0) && !GetEditMessageActive())
++      if ((cursorEnd || (entryPos == 0)) && (messageCount > 0) && !GetEditMessageActive())
+       {
+         SetSelectMessageActive(true);
+       }
+-      else
++      else if (!cursorEnd)
+       {
+         int cx = 0;
+         int cy = 0;
+@@ -1285,6 +1292,77 @@ void UiModel::Impl::OpenLink(const std::string& p_Url)
+   RunProgram(cmd);
+ }
+ 
++bool UiModel::Impl::IsEntryEmpty()
++{
++  return m_EntryStr[m_CurrentChat.first][m_CurrentChat.second].empty();
++}
++
++void UiModel::Impl::OnKeySwitchChat(bool p_Next)
++{
++  if (GetSelectMessageActive())
++  {
++    m_MessageOffset[m_CurrentChat.first][m_CurrentChat.second] = 0;
++    SetSelectMessageActive(false);
++  }
++
++  p_Next ? OnKeyNextChat() : OnKeyPrevChat();
++}
++
++// Enter on a selected message: open its attachment (e.g. play a voice note), or
++// go back to writing if it has none.
++void UiModel::Impl::OnKeyEnterSelected()
++{
++  const std::string& profileId = m_CurrentChat.first;
++  const std::string& chatId = m_CurrentChat.second;
++  const std::vector<std::string>& messageVec = m_MessageVec[profileId][chatId];
++  const int messageOffset = m_MessageOffset[profileId][chatId];
++  const std::unordered_map<std::string, ChatMessage>& messages = m_Messages[profileId][chatId];
++
++  bool hasAttachment = false;
++  if ((messageOffset >= 0) && (messageOffset < (int)messageVec.size()))
++  {
++    auto mit = messages.find(messageVec.at(messageOffset));
++    hasAttachment = (mit != messages.end()) && !mit->second.fileInfo.empty();
++  }
++
++  if (hasAttachment)
++  {
++    OnKeyOpenAttachment();
++  }
++  else
++  {
++    AnyUserKeyInput();
++    m_MessageOffset[profileId][chatId] = 0;
++    SetSelectMessageActive(false);
++    UpdateHistory();
++  }
++}
++
++// Back: leave message selection, then the archived list. Returns false when
++// there is nothing to go back from (the caller then quits).
++bool UiModel::Impl::OnKeyBack()
++{
++  AnyUserKeyInput();
++
++  if (GetEditMessageActive()) return true;
++
++  if (GetSelectMessageActive())
++  {
++    m_MessageOffset[m_CurrentChat.first][m_CurrentChat.second] = 0;
++    SetSelectMessageActive(false);
++    UpdateHistory();
++    return true;
++  }
++
++  if (m_ShowArchived)
++  {
++    SetShowArchived(false);
++    return true;
++  }
++
++  return false;
++}
++
+ void UiModel::Impl::OpenAttachment(const std::string& p_Path)
+ {
+   static const std::string cmdTemplate = []()
+@@ -4736,6 +4814,13 @@ void UiModel::KeyHandler(wint_t p_Key)
+ 
+   static wint_t keyToggleList = UiKeyConfig::GetKey("toggle_list");
+   static wint_t keyToggleArchived = UiKeyConfig::GetKey("toggle_archived");
++  static wint_t keyGuide = UiKeyConfig::GetKey("guide");
++  static wint_t keyBack = UiKeyConfig::GetKey("back");
++  static wint_t keyBackAlt = UiKeyConfig::GetKey("back_alt");
++  static wint_t keyLeftChat = UiKeyConfig::GetKey("left");
++  static wint_t keyRightChat = UiKeyConfig::GetKey("right");
++  static const bool arrowsSwitchChat = UiConfig::GetBool("arrows_switch_chat");
++  static const bool enterOpensSelected = UiConfig::GetBool("enter_opens_selected");
+   static wint_t keyToggleTop = UiKeyConfig::GetKey("toggle_top");
+   static wint_t keyToggleHelp = UiKeyConfig::GetKey("toggle_help");
+   static wint_t keyToggleEmoji = UiKeyConfig::GetKey("toggle_emoji");
+@@ -4754,6 +4839,25 @@ void UiModel::KeyHandler(wint_t p_Key)
+   static wint_t keyAutoCompose = UiKeyConfig::GetKey("auto_compose");
+   static wint_t keySelectMention = UiKeyConfig::GetKey("select_mention");
+ 
++  // left / right always switch chat (unsent text stays as that chat's draft)
++  if (arrowsSwitchChat && ((p_Key == keyLeftChat) || (p_Key == keyRightChat)))
++  {
++    std::unique_lock<owned_mutex> lock(m_ModelMutex);
++    GetImpl().OnKeySwitchChat(p_Key == keyRightChat);
++    return;
++  }
++
++  // enter on a selected message opens its attachment, unless there is text to send
++  if (enterOpensSelected && (p_Key == keySendMsg))
++  {
++    std::unique_lock<owned_mutex> lock(m_ModelMutex);
++    if (GetImpl().GetSelectMessageActive() && !GetImpl().GetEditMessageActive() && GetImpl().IsEntryEmpty())
++    {
++      GetImpl().OnKeyEnterSelected();
++      return;
++    }
++  }
++
+   if (p_Key == keyTerminalResize)
+   {
+     std::unique_lock<owned_mutex> lock(m_ModelMutex);
+@@ -4774,6 +4878,14 @@ void UiModel::KeyHandler(wint_t p_Key)
+     std::unique_lock<owned_mutex> lock(m_ModelMutex);
+     GetImpl().OnKeyToggleHelp();
+   }
++  else if (p_Key == keyGuide)
++  {
++    OnKeyGuide();
++  }
++  else if ((p_Key == keyBack) || (p_Key == keyBackAlt))
++  {
++    OnKeyBack();
++  }
+   else if (p_Key == keyToggleArchived)
+   {
+     std::unique_lock<owned_mutex> lock(m_ModelMutex);
+@@ -5665,6 +5777,51 @@ bool UiModel::MessageDialog(const std::string& p_Title, const std::string& p_Tex
+   return rv;
+ }
+ 
++// Text screen that any key closes; returns true if closed with the back key
++bool UiModel::TextDialog(const std::string& p_Text)
++{
++  std::string text = p_Text;
++  while (!text.empty() && (text.back() == '\n'))
++  {
++    text.pop_back();
++  }
++
++  // same width and wrapping as UiMessageDialog: border (2) + padding (2), top margin
++  const int w = (int)(GetScreenWidth() * 0.95f);
++  const int lines = (int)StrUtil::WordWrap(StrUtil::ToWString(text), std::max(1, w - 4), false, false, false, 2).size();
++  UiDialogParams params(this, "", 0.95f, (float)(lines + 3));
++  UiMessageDialog messageDialog(params, text, true /*p_Guide*/);
++  bool rv = messageDialog.Run();
++  ReinitView();
++  return rv;
++}
++
++// Short help screen from guide.txt in the application dir
++void UiModel::OnKeyGuide()
++{
++  std::string text = FileUtil::ReadFile(FileUtil::GetApplicationDir() + "/guide.txt");
++  TextDialog(text.empty() ? "guide.txt not found" : text);
++}
++
++// Back: goes back one step; from the main list it quits (after confirmation)
++void UiModel::OnKeyBack()
++{
++  {
++    std::unique_lock<owned_mutex> lock(m_ModelMutex);
++    if (GetImpl().OnKeyBack()) return;
++  }
++
++  static const bool confirmQuit = UiConfig::GetBool("back_confirm_quit");
++  if (confirmQuit)
++  {
++    std::string text = UiConfig::GetStr("back_quit_text");
++    StrUtil::ReplaceString(text, "\\n", "\n");
++    if (!TextDialog(text)) return;
++  }
++
++  OnKeyQuit();
++}
++
+ void UiModel::OnKeyDeleteMsg()
+ {
+   // Pre-req
+diff --git a/src/uimodel.h b/src/uimodel.h
+index 0a73fbd0..4e41fd67 100644
+--- a/src/uimodel.h
++++ b/src/uimodel.h
+@@ -39,6 +39,10 @@ private:
+     void OnKeyToggleHelp();
+     void OnKeyToggleList();
+     void OnKeyToggleArchived();
++    void OnKeySwitchChat(bool p_Next);
++    bool IsEntryEmpty();
++    bool OnKeyBack();
++    void OnKeyEnterSelected();
+     void SetShowArchived(bool p_ShowArchived);
+     bool GetShowArchived();
+     void OnKeyToggleTop();
+@@ -411,6 +415,9 @@ private:
+   void OnKeyFindNext();
+   void OnKeyForwardMsg();
+   bool MessageDialog(const std::string& p_Title, const std::string& p_Text, float p_WReq, float p_HReq);
++  void OnKeyGuide();
++  void OnKeyBack();
++  bool TextDialog(const std::string& p_Text);
+   void OnKeyDeleteMsg();
+   void OnKeyDeleteChat();
+   void OnKeyArchiveChat();

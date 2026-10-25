@@ -1,0 +1,84 @@
+diff --git a/lib/ncutil/src/strutil.cpp b/lib/ncutil/src/strutil.cpp
+index c9865a8f..c391c5c8 100644
+--- a/lib/ncutil/src/strutil.cpp
++++ b/lib/ncutil/src/strutil.cpp
+@@ -9,6 +9,7 @@
+ 
+ #include <algorithm>
+ #include <codecvt>
++#include <climits>
+ #include <cstdint>
+ #include <cstring>
+ #include <cwctype>
+@@ -368,11 +369,13 @@ std::string StrUtil::Textize(const std::string& p_Str)
+ //   R <hex> <text>   replacement for a code point (text may be empty)
+ //   E <text>         fallback for other emoji / pictographs
+ //   O <text>         fallback for other unsupported code points
++//   W <hex>[-<hex>] <width>  terminal width other than 1 (see wcwidth below)
+ // Without glyphs.txt the string is returned unchanged.
+ struct GlyphTable
+ {
+   bool loaded = false;
+   std::vector<std::pair<uint32_t, uint32_t>> allowed;
++  std::vector<std::pair<std::pair<uint32_t, uint32_t>, int>> widths;
+   std::unordered_map<uint32_t, std::string> replacements;
+   std::string emojiFallback = "[e]";
+   std::string otherFallback = "?";
+@@ -407,6 +410,14 @@ static const GlyphTable& GetGlyphTable()
+         const uint32_t cp = std::stoul(arg.substr(0, space), nullptr, 16);
+         table.replacements[cp] = (space == std::string::npos) ? "" : arg.substr(space + 1);
+       }
++      else if (type == 'W')
++      {
++        const size_t dash = arg.find('-');
++        const size_t space = arg.find(' ');
++        const uint32_t first = std::stoul(arg.substr(0, std::min(dash, space)), nullptr, 16);
++        const uint32_t last = (dash < space) ? std::stoul(arg.substr(dash + 1, space - dash - 1), nullptr, 16) : first;
++        table.widths.push_back(std::make_pair(std::make_pair(first, last), std::stoi(arg.substr(space + 1))));
++      }
+       else if (type == 'E')
+       {
+         table.emojiFallback = arg;
+@@ -418,6 +429,7 @@ static const GlyphTable& GetGlyphTable()
+     }
+ 
+     std::sort(table.allowed.begin(), table.allowed.end());
++    std::sort(table.widths.begin(), table.widths.end());
+     table.loaded = true;
+     LOG_INFO("glyph filter loaded %zu ranges %zu replacements", table.allowed.size(), table.replacements.size());
+   });
+@@ -425,6 +437,34 @@ static const GlyphTable& GetGlyphTable()
+   return table;
+ }
+ 
++// Character widths as the terminal draws them (W lines of glyphs.txt, measured on
++// the phone). Replaces the C library wcwidth() in this static build, so nchat and
++// ncurses position text exactly like the terminal. Code points not listed are 1
++// column wide, except planes 1-3 without glyphs.txt.
++extern "C" int wcwidth(wchar_t p_Wc)
++{
++  const uint32_t cp = static_cast<uint32_t>(p_Wc);
++  if (cp == 0) return 0;
++  if ((cp < 0x20) || ((cp >= 0x7F) && (cp < 0xA0))) return -1;
++  if (cp < 0x7F) return 1;
++
++  const GlyphTable& table = GetGlyphTable();
++  if (table.loaded)
++  {
++    auto it = std::upper_bound(table.widths.begin(), table.widths.end(),
++                               std::make_pair(std::make_pair(cp, UINT32_MAX), INT_MAX));
++    if ((it != table.widths.begin()) && (cp <= std::prev(it)->first.second))
++    {
++      return std::prev(it)->second;
++    }
++
++    return 1;
++  }
++
++  const uint32_t plane = cp >> 16;
++  return ((plane >= 1) && (plane <= 3)) ? 2 : 1;
++}
++
+ std::string StrUtil::GlyphFilter(const std::string& p_Str)
+ {
+   const GlyphTable& table = GetGlyphTable();

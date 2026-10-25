@@ -6,11 +6,14 @@
 #   - copia el programa a /data/local/tmp/oldiechat (nchat, conversor y
 #     reproductor de audio, terminfo, zonas horarias, scripts)
 #   - mueve la sesión de una instalación anterior en /data/local/tmp/nchat
-#   - copia key.conf, ui.conf, glyphs.txt y guide.txt a la configuración (respalda los existentes)
+#   - copia key.conf, ui.conf, color.conf, glyphs.txt y guide.txt a la configuración (respalda los existentes)
 #   - crea /system/etc/resolv.conf
 #   - instala /system/etc/ssl/certs/ca-certificates.crt
 #   - crea /system/bin/wsp para abrir OldieChat con un solo comando
 #   - copia el ícono a /sdcard/OldieChat/oldiechat.png (para el acceso directo)
+#   - instala la fuente de emoji en /system/fonts y la pone antes que la de Android
+#     en /system/etc/fallback_fonts*.xml (respalda los originales como .orig);
+#     hay que reiniciar el teléfono una vez
 #
 # Uso: ./install.sh
 # Variables opcionales:
@@ -120,9 +123,9 @@ install_program() {
     root "ln -s ${DEST} ${OLD_DEST}"
   fi
 
-  log "Instalando key.conf, ui.conf, glyphs.txt y guide.txt"
+  log "Instalando la configuración (key, ui, color, glyphs, guide)"
   root "mkdir ${DEST}/home ${DEST}/home/.config ${CONFDIR} 2>/dev/null; chmod 700 ${DEST}/home"
-  for f in key.conf ui.conf glyphs.txt guide.txt; do
+  for f in key.conf ui.conf color.conf glyphs.txt guide.txt; do
     [[ -f "${PKG}/config/${f}" ]] || continue
     root "if [ -f ${CONFDIR}/${f} ]; then cat ${CONFDIR}/${f} > ${CONFDIR}/${f}.bak; chmod 600 ${CONFDIR}/${f}.bak; fi; \
       cat ${STAGE}/config/${f} > ${CONFDIR}/${f} && chmod 600 ${CONFDIR}/${f}"
@@ -144,8 +147,44 @@ install_system() {
     cat ${STAGE}/wsp > /system/bin/wsp && \
     chmod 644 /system/etc/resolv.conf /system/etc/ssl/certs/ca-certificates.crt && \
     chmod 755 /system/etc/ssl /system/etc/ssl/certs /system/bin/wsp" || ok=1
+  [[ ${ok} -ne 0 ]] || install_emoji_font || ok=1
   root "mount -o remount,ro ${dev} /system" || echo "Aviso: no pude volver /system a solo lectura"
   [[ ${ok} -eq 0 ]] || die "falló la escritura en /system"
+}
+
+# Fuente de emoji: se copia a /system/fonts y se agrega a la lista de respaldo de
+# Android antes de AndroidEmoji.ttf (que dibuja las caras como robots). La lista
+# se edita en el equipo; el original queda como .orig. Requiere /system en escritura.
+EMOJI_FONT="NotoEmoji-OldieChat.ttf"
+REBOOT=0
+install_emoji_font() {
+  [[ -f "${PKG}/fonts/${EMOJI_FONT}" ]] || return 0
+  log "Instalando la fuente de emoji"
+  adb push "${PKG}/fonts/${EMOJI_FONT}" "${STAGE}/${EMOJI_FONT}" >/dev/null
+  root "cat ${STAGE}/${EMOJI_FONT} > /system/fonts/${EMOJI_FONT} && chmod 644 /system/fonts/${EMOJI_FONT}" || return 1
+
+  local xml tmp
+  tmp="$(mktemp -d)"
+  for xml in $(phone "ls /system/etc/fallback_fonts*.xml"); do
+    [[ "${xml}" == *.xml ]] || continue
+    adb pull "${xml}" "${tmp}/f.xml" >/dev/null
+    grep -q "${EMOJI_FONT}" "${tmp}/f.xml" && continue
+    python3 -I -c '
+import re, sys
+path, font = sys.argv[1], sys.argv[2]
+xml = open(path, encoding="utf-8").read()
+family = "    <family>\n        <fileset>\n            <file>%s</file>\n        </fileset>\n    </family>\n" % font
+m = re.search(r"[ \t]*<family>\s*<fileset>\s*<file>AndroidEmoji\.ttf</file>", xml)
+pos = m.start() if m else xml.rindex("</familyset>")
+open(path, "w", encoding="utf-8").write(xml[:pos] + family + xml[pos:])
+' "${tmp}/f.xml" "${EMOJI_FONT}" || { rm -rf "${tmp}"; return 1; }
+    adb push "${tmp}/f.xml" "${STAGE}/f.xml" >/dev/null
+    root "[ -f ${xml}.orig ] || { cat ${xml} > ${xml}.orig; chmod 644 ${xml}.orig; }; \
+      cat ${STAGE}/f.xml > ${xml} && chmod 644 ${xml}" || { rm -rf "${tmp}"; return 1; }
+    echo "  ${xml}: fuente de emoji agregada"
+    REBOOT=1
+  done
+  rm -rf "${tmp}"
 }
 
 finish() {
@@ -160,6 +199,10 @@ Si es la primera vez, vincula WhatsApp desde el equipo:
   adb shell
   su -c "TERM=screen-256color ${DEST}/oldiechat.sh --setup"
 EOF
+  if [[ ${REBOOT} -eq 1 ]]; then
+    echo
+    echo "Reinicia el teléfono para que Android cargue la fuente de emoji."
+  fi
 }
 
 check
