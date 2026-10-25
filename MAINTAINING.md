@@ -12,7 +12,7 @@ publicar una versión y qué hacer cuando algo se rompe.
 | Alpine (imagen de compilación) | `versions.env` (`ALPINE_IMAGE`, por digest) | — |
 | Go | `versions.env` (`GO_VERSION`, `GO_SHA256`) | `go/patches/` (parche de musl incluido) |
 | nchat | `versions.env` (`NCHAT_COMMIT`) | `nchat/patches/` y el paquete de código fuente de cada versión |
-| whatsmeow | incluido en nchat; el motor lo fija en `engine/go.mod` | `engine/vendor/`, `nchat/vendor/` |
+| whatsmeow | `versions.env` (`WHATSMEOW_COMMIT`), para la terminal y el motor | `engine/vendor/`, `nchat/vendor/` |
 | Dependencias Go de nchat | `nchat/vendor/` (`go mod vendor`) | sí |
 | Fuente de emoji | `versions.env` (`NOTO_EMOJI_COMMIT`, `NOTO_EMOJI_SHA256`) | `phone/fonts/` (`scripts/make-emoji-font.sh`) |
 | libopus | `versions.env` (`OPUS_VERSION`, `OPUS_SHA256`) | — |
@@ -104,6 +104,27 @@ mantenemos nosotros; sin él la terminal no arranca. Al cambiar de versión de G
 **No conviene quedarse en un whatsmeow viejo por mucho tiempo**: el servidor
 rechaza clientes con versiones de protocolo antiguas (nchat lo explica en
 `doc/WMOUTDATED.md`). Se puede estar algunas semanas detrás; no meses.
+
+## Actualizar whatsmeow
+
+No hace falta esperar a nchat. Con internet:
+
+```bash
+scripts/update-whatsmeow.sh            # último commit de whatsmeow
+scripts/update-whatsmeow.sh <commit>   # o uno en particular
+```
+
+Fija `WHATSMEOW_COMMIT` en `versions.env` y ejecuta `scripts/vendor-go.sh`,
+que usa `utils/whatsmeow-update` de nchat (copia whatsmeow, aplica el parche de
+nchat, cambia la fecha en `gowm.go` y hace `go mod tidy`) y guarda las
+dependencias de la terminal y del motor. Después: `./build.sh` y
+`scripts/phone-test.sh`.
+
+Si se detiene en `.rej`, el parche de nchat
+(`lib/wmchat/go/ext/nchat-whatsmeow.patch`) ya no entra en ese whatsmeow; si
+falla la compilación de `gowm.go` o de `engine/wa`, whatsmeow cambió su API.
+En los dos casos: espera a que nchat se adapte o corrígelo con un parche en
+`nchat/patches/`.
 
 ## Actualizar nchat
 

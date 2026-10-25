@@ -10,7 +10,7 @@ ARG ALPINE_IMAGE=alpine:3.24
 FROM ${ALPINE_IMAGE}
 
 RUN apk add --no-cache \
-    bash build-base cmake git patch pkgconf samurai \
+    bash build-base cmake diffutils git patch pkgconf samurai \
     ncurses-dev ncurses-static ncurses-terminfo \
     sqlite-dev sqlite-static \
     openssl-dev openssl-libs-static \
