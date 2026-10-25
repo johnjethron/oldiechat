@@ -5,7 +5,9 @@
 # Basado en utils/dist/Dockerfile.alpine de nchat, sin xcb (no hay X11 en Android).
 # Imagen de compilación de OldieChat terminal.
 
-FROM alpine:3.24
+# Versiones: versions.env (build.sh las pasa con --build-arg).
+ARG ALPINE_IMAGE=alpine:3.24
+FROM ${ALPINE_IMAGE}
 
 RUN apk add --no-cache \
     bash build-base cmake git gperf linux-headers patch pkgconf samurai file \
@@ -21,10 +23,12 @@ RUN apk add --no-cache \
 # sin el parche, una c-archive de Go se cae al arrancar en musl (nchat #204).
 # La versión debe coincidir con la del parche (utils/dist/patches/).
 # El tarball "armv6l" es el único de Go para ARM de 32 bits; GOARM=7 genera ARMv7.
-ARG GO_VERSION=1.26.3
+ARG GO_VERSION
+ARG GO_SHA256
 COPY go-pr69325-musl-argv.patch /tmp/go-musl-argv.patch
 RUN set -eu; \
     wget -q "https://go.dev/dl/go${GO_VERSION}.linux-armv6l.tar.gz" -O /tmp/go.tar.gz && \
+    echo "${GO_SHA256}  /tmp/go.tar.gz" | sha256sum -c - && \
     tar -C /usr/local -xzf /tmp/go.tar.gz && \
     patch -p1 -d /usr/local/go < /tmp/go-musl-argv.patch && \
     rm /tmp/go.tar.gz /tmp/go-musl-argv.patch && \
@@ -35,9 +39,11 @@ ENV PATH=/usr/local/go/bin:${PATH} \
     CGO_ENABLED=1
 
 # libopus estático para oldiechat-audio (Alpine solo trae la versión dinámica)
-ARG OPUS_VERSION=1.5.2
+ARG OPUS_VERSION
+ARG OPUS_SHA256
 RUN set -eu; \
     wget -q "https://downloads.xiph.org/releases/opus/opus-${OPUS_VERSION}.tar.gz" -O /tmp/opus.tar.gz && \
+    echo "${OPUS_SHA256}  /tmp/opus.tar.gz" | sha256sum -c - && \
     tar -C /tmp -xzf /tmp/opus.tar.gz && \
     cd "/tmp/opus-${OPUS_VERSION}" && \
     ./configure --prefix=/usr/local --disable-shared --enable-static --disable-doc --disable-extra-programs && \

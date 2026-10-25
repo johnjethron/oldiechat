@@ -4,8 +4,11 @@
 # estático musl para ARMv7, más el conversor y el reproductor de audio.
 #
 # Requisitos en el host (x86_64): docker, qemu-user-static, binfmt-support, curl.
-# Resultado: out/oldiechat-terminal-<versión>-armv7/      (paquete)
-#            out/oldiechat-terminal-<versión>-armv7.tar.gz (para Releases)
+# Versiones exactas: versions.env. Dependencias Go: third_party/ y engine/vendor/.
+# Resultado: out/oldiechat-terminal-<versión>-armv7/            (paquete)
+#            out/oldiechat-terminal-<versión>-armv7.tar.gz       (para Releases)
+#            out/oldiechat-terminal-<versión>-source.tar.gz      (código fuente completo)
+#            out/engine/oldiechat-engine-armv7                   (motor, para pruebas)
 #
 # Uso: ./build.sh            compila
 #      ./build.sh shell      abre una shell en el contenedor armv7
@@ -13,8 +16,8 @@
 set -euo pipefail
 
 VERSION="$(cat "$(dirname "$0")/VERSION")"
-NCHAT_REPO="${NCHAT_REPO:-https://github.com/d99kris/nchat}"
-NCHAT_COMMIT="${NCHAT_COMMIT:-91908dfab06356584cc594cd589a33d4a5dc19b3}"
+# shellcheck source=versions.env
+source "$(dirname "$0")/versions.env"
 IMAGE="${IMAGE:-oldiechat-builder}"
 PLATFORM="linux/arm/v7"
 JOBS="${JOBS:-$(nproc)}"
@@ -54,6 +57,12 @@ fetch_source() {
     log "Aplicando $(basename "${p}")"
     git -C "${SRC}" apply "${p}"
   done
+
+  # dependencias Go de nchat guardadas en el repositorio (scripts/vendor-go.sh)
+  if [[ -d "${HERE}/third_party/wmchat-vendor" ]]; then
+    rm -rf "${SRC}/lib/wmchat/go/vendor"
+    cp -r "${HERE}/third_party/wmchat-vendor" "${SRC}/lib/wmchat/go/vendor"
+  fi
 }
 
 build_image() {
@@ -62,7 +71,11 @@ build_image() {
   rm -rf "${ctx}"; mkdir -p "${ctx}"
   cp "${HERE}/Dockerfile.armv7" "${ctx}/Dockerfile"
   cp "${SRC}/utils/dist/patches/go-pr69325-musl-argv.patch" "${ctx}/"
-  docker build --platform "${PLATFORM}" -t "${IMAGE}" "${ctx}"
+  docker build --platform "${PLATFORM}" -t "${IMAGE}" \
+    --build-arg ALPINE_IMAGE="${ALPINE_IMAGE}" \
+    --build-arg GO_VERSION="${GO_VERSION}" --build-arg GO_SHA256="${GO_SHA256}" \
+    --build-arg OPUS_VERSION="${OPUS_VERSION}" --build-arg OPUS_SHA256="${OPUS_SHA256}" \
+    "${ctx}"
 }
 
 run_in_container() {
@@ -70,9 +83,10 @@ run_in_container() {
   docker run --rm -i $([[ -t 0 ]] && echo -t) --platform "${PLATFORM}" \
     --user "$(id -u):$(id -g)" \
     -e HOME=/work/cache -e GOCACHE=/work/cache/go-build -e GOPATH=/work/cache/go \
-    -e GOFLAGS=-modcacherw -e JOBS="${JOBS}" -e TERMS="${TERMS}" -e NAME="${NAME}" \
+    -e GOFLAGS="-mod=vendor -modcacherw" -e GOPROXY=off -e GOTOOLCHAIN=local \
+    -e JOBS="${JOBS}" -e TERMS="${TERMS}" -e NAME="${NAME}" \
     -v "${WORK}:/work" -v "${HERE}/out:/out" -v "${HERE}/files:/files:ro" \
-    -v "${HERE}/config:/config:ro" -v "${HERE}/audio:/audio:ro" -v "${HERE}/LICENSE:/LICENSE:ro" \
+    -v "${HERE}/config:/config:ro" -v "${HERE}/engine:/engine:ro" -v "${HERE}/LICENSE:/LICENSE:ro" \
     -w /work "${IMAGE}" "$@"
 }
 
@@ -101,10 +115,13 @@ compile() {
     cp "$B/bin/nchat" "$O/bin/nchat"
     strip --strip-all "$O/bin/nchat"
 
-    # conversor Ogg Opus -> WAV (libopus estático de la imagen)
-    cd /audio
-    CGO_ENABLED=1 CGO_CFLAGS=-I/usr/local/include CGO_LDFLAGS=-L/usr/local/lib \
-      go build -trimpath -ldflags "-s -w -extldflags -static" -o "$O/bin/oldiechat-audio" ./cmd/oldiechat-audio
+    # motor (engine/): conversor Opus -> WAV para el paquete y el motor completo
+    # para scripts/phone-test.sh (libopus estático de la imagen)
+    cd /engine
+    export CGO_ENABLED=1 CGO_CFLAGS=-I/usr/local/include CGO_LDFLAGS=-L/usr/local/lib
+    go build -trimpath -ldflags "-s -w -extldflags -static" -o "$O/bin/oldiechat-audio" ./cmd/oldiechat-audio
+    mkdir -p /out/engine
+    go build -trimpath -ldflags "-s -w -extldflags -static" -o /out/engine/oldiechat-engine-armv7 ./cmd/oldiechat-engine
     cd /work
 
     for t in $TERMS; do
@@ -120,7 +137,7 @@ compile() {
 
     cp /files/oldiechat.sh /files/audio.sh /files/install.sh /files/oldiechat.png "$O/"
     cp /config/*.conf "$O/config/"
-    [ ! -f /config/glyphs.txt ] || cp /config/glyphs.txt "$O/config/"
+    cp /config/glyphs.txt /config/guide.txt "$O/config/"
 
     # licencias: el binario combinado se distribuye bajo GPL v3 (ver nchat)
     cp /LICENSE "$O/licenses/LICENSE.oldiechat"
@@ -164,6 +181,21 @@ package() {
   cat "${OUT}.tar.gz.sha256"
 }
 
+# Código fuente completo de la versión (GPL v3 y respaldo): este repositorio más
+# nchat en el commit fijado, con parches y dependencias Go ya incluidas.
+source_package() {
+  log "Paquete de código fuente"
+  local name="oldiechat-terminal-${VERSION}-source"
+  local tmp="${WORK}/source/${name}"
+  rm -rf "${WORK}/source"; mkdir -p "${tmp}"
+  tar -C "${HERE}" --exclude=./work --exclude=./out --exclude=./.git --exclude=./build.log -cf - . | tar -C "${tmp}" -xf -
+  tar -C "${WORK}" --exclude=./nchat/.git -cf - nchat | tar -C "${tmp}" -xf -
+  mv "${tmp}/nchat" "${tmp}/nchat-${NCHAT_COMMIT:0:7}-patched"
+  tar -C "${WORK}/source" -czf "${HERE}/out/${name}.tar.gz" "${name}"
+  (cd "${HERE}/out" && sha256sum "${name}.tar.gz" > "${name}.tar.gz.sha256")
+  ls -lh "${HERE}/out/${name}.tar.gz"
+}
+
 main() {
   check_host
   fetch_source
@@ -175,6 +207,7 @@ main() {
   compile
   build_player
   package
+  source_package
 }
 
 main "$@"
