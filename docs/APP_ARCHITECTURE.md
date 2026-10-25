@@ -18,9 +18,9 @@ Estado: **propuesta para revisión**. La interfaz no se ha empezado; el motor
 ┌──────────────────────────── APK ────────────────────────────┐
 │                                                             │
 │  Interfaz (Java)            EngineService (Java)            │
-│  ─ ChatsActivity  ◄──────►  servicio en primer plano        │
+│  ─ ChatsActivity  ◄──────►  solo con la app abierta         │
 │  ─ ChatActivity    eventos  ─ lanza y vigila el motor       │
-│  ─ PairActivity             ─ notificaciones                │
+│  ─ PairActivity             ─ sincroniza al abrir           │
 │                             ─ reproduce audio (MediaPlayer) │
 │                                   │ stdin/stdout JSON       │
 │                                   ▼                         │
@@ -34,8 +34,8 @@ Estado: **propuesta para revisión**. La interfaz no se ha empezado; el motor
 - **Interfaz (Java, APIs del framework)**: sin AndroidX ni bibliotecas de
   terceros, porque cada vez más bibliotecas dejan de soportar API 16 a 20. Vistas
   simples (`ListView`, `EditText`), tema oscuro y letra grande.
-- **EngineService**: un `Service` que lanza el motor como proceso hijo, traduce
-  sus eventos para la interfaz y muestra las notificaciones.
+- **EngineService**: lanza el motor como proceso hijo mientras la app está
+  abierta y traduce sus eventos para la interfaz.
 - **Motor** (`engine/cmd/oldiechat-engine`): un ejecutable Go con
   whatsmeow, el mismo código que se prueba hoy desde la terminal.
 
@@ -121,19 +121,10 @@ detecte un motor incompatible.
 - **Zona horaria**: la interfaz pasa `TimeZone.getDefault().getID()` con `--tz`;
   los datos de zonas van dentro del motor (`time/tzdata`).
 
-## 6. Servicio en primer plano y notificaciones
+## 6. Conexión
 
-- **EngineService** mantiene el motor vivo con una notificación fija ("OldieChat
-  conectado"):
-  - Android 4.1–7: `startForeground(id, notification)`.
-  - Android 8+: `startForegroundService()` y un canal de notificaciones.
-  - Android 14+: `android:foregroundServiceType="remoteMessaging"` con su permiso
-    `FOREGROUND_SERVICE_REMOTE_MESSAGING`.
-- **Mensajes nuevos**: una notificación por chat, solo con el nombre y el texto.
-- **Permiso de notificaciones**: en Android 13+ se pide `POST_NOTIFICATIONS` al
-  terminar la vinculación, explicando para qué sirve.
-- **Batería**: en Android 6+ se ofrece (sin obligar) excluir la app de la
-  optimización de batería, porque si no Doze corta la conexión.
+La app solo se conecta mientras está abierta y, al abrirse, sincroniza lo
+pendiente. No hay servicio en primer plano ni notificaciones.
 
 ## 7. Vinculación con código numérico
 
@@ -183,7 +174,6 @@ mismo teléfono que se quiere vincular.
 ## 12. Preguntas para revisar
 
 1. ¿La lista de archivados al final en una sección plegada, o una pantalla aparte?
-2. ¿Notificaciones con el texto del mensaje, o solo "Mensaje de <nombre>"?
-3. ¿Distribución solo por GitHub Releases, o también F-Droid? (F-Droid marcaría
+2. ¿Distribución solo por GitHub Releases, o también F-Droid? (F-Droid marcaría
    el antirrasgo "servicio de red no libre").
-4. ¿ARM64 desde la primera versión o primero solo ARMv7?
+3. ¿ARM64 desde la primera versión o primero solo ARMv7?
