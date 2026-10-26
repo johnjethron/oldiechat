@@ -1,8 +1,51 @@
 diff --git a/lib/wmchat/go/gowm.go b/lib/wmchat/go/gowm.go
-index 37d3a2d1..fe846555 100644
+index 37d3a2d1..78a56877 100644
 --- a/lib/wmchat/go/gowm.go
 +++ b/lib/wmchat/go/gowm.go
-@@ -2023,9 +2023,12 @@ func (handler *WmEventHandler) HandleAudioMessage(messageInfo types.MessageInfo,
+@@ -1879,6 +1879,14 @@ func (handler *WmEventHandler) HandleTextMessage(messageInfo types.MessageInfo,
+ 		BoolToInt(isRead), BoolToInt(isEdited))
+ }
+ 
++// file size in the name (<id>_<kb>k), shown as "<label> N KB"
++func SizeTag(n uint64) string {
++	if n == 0 {
++		return ""
++	}
++	return fmt.Sprintf("_%dk", (n+1023)/1024)
++}
++
+ func (handler *WmEventHandler) HandleImageMessage(messageInfo types.MessageInfo, msg *waE2E.Message, isSyncRead bool) {
+ 	LOG_TRACE(fmt.Sprintf("ImageMessage"))
+ 
+@@ -1914,7 +1922,7 @@ func (handler *WmEventHandler) HandleImageMessage(messageInfo types.MessageInfo,
+ 	fileStatus := FileStatusNotDownloaded
+ 	if !isEdited {
+ 		var tmpPath string = GetPath(connId) + "/tmp"
+-		filePath = fmt.Sprintf("%s/%s%s", tmpPath, messageInfo.ID, ext)
++		filePath = fmt.Sprintf("%s/%s%s%s", tmpPath, messageInfo.ID, SizeTag(img.GetFileLength()), ext)
+ 		fileId = DownloadableMessageToFileId(client, img, filePath)
+ 	}
+ 
+@@ -1958,6 +1966,9 @@ func (handler *WmEventHandler) HandleVideoMessage(messageInfo types.MessageInfo,
+ 
+ 	// get extension
+ 	ext := ExtensionByType(vid.GetMimetype(), ".mp4")
++	if vid.GetGifPlayback() {
++		ext = ".gif" + ext
++	}
+ 
+ 	// text
+ 	text := vid.GetCaption()
+@@ -1974,7 +1985,7 @@ func (handler *WmEventHandler) HandleVideoMessage(messageInfo types.MessageInfo,
+ 	fileStatus := FileStatusNotDownloaded
+ 	if !isEdited {
+ 		var tmpPath string = GetPath(connId) + "/tmp"
+-		filePath = fmt.Sprintf("%s/%s%s", tmpPath, messageInfo.ID, ext)
++		filePath = fmt.Sprintf("%s/%s%s%s", tmpPath, messageInfo.ID, SizeTag(vid.GetFileLength()), ext)
+ 		fileId = DownloadableMessageToFileId(client, vid, filePath)
+ 	}
+ 
+@@ -2023,9 +2034,12 @@ func (handler *WmEventHandler) HandleAudioMessage(messageInfo types.MessageInfo,
  	ci := aud.GetContextInfo()
  	handler.ProcessContextInfo(ci, &quotedId, &text)
  
@@ -16,8 +59,17 @@ index 37d3a2d1..fe846555 100644
  	fileId := DownloadableMessageToFileId(client, aud, filePath)
  	fileStatus := FileStatusNotDownloaded
  
+@@ -2079,7 +2093,7 @@ func (handler *WmEventHandler) HandleDocumentMessage(messageInfo types.MessageIn
+ 	fileStatus := FileStatusNotDownloaded
+ 	if !isEdited {
+ 		var tmpPath string = GetPath(connId) + "/tmp"
+-		filePath = fmt.Sprintf("%s/%s-%s", tmpPath, messageInfo.ID, doc.GetFileName())
++		filePath = fmt.Sprintf("%s/%s%s-%s", tmpPath, messageInfo.ID, SizeTag(doc.GetFileLength()), doc.GetFileName())
+ 		fileId = DownloadableMessageToFileId(client, doc, filePath)
+ 	}
+ 
 diff --git a/src/uihistoryview.cpp b/src/uihistoryview.cpp
-index 7f1fecab..fafcffe1 100644
+index 7f1fecab..de9eed75 100644
 --- a/src/uihistoryview.cpp
 +++ b/src/uihistoryview.cpp
 @@ -7,6 +7,10 @@
@@ -31,7 +83,7 @@ index 7f1fecab..fafcffe1 100644
  #include "appconfig.h"
  #include "apputil.h"
  #include "fileutil.h"
-@@ -48,6 +52,81 @@ UiHistoryView::~UiHistoryView()
+@@ -48,6 +52,95 @@ UiHistoryView::~UiHistoryView()
    }
  }
  
@@ -60,27 +112,41 @@ index 7f1fecab..fafcffe1 100644
 +  return (granule > 0) ? (int)(granule / 48000) : -1;
 +}
 +
-+// Attachment name shown in the history: one short word, and voice notes as
-+// "audio mm.ss", with the duration from the file name (<id>.<secs>s.oga) or
-+// from the downloaded file
++// Web addresses shown as "link <domain>"
++static std::string LinkText(const std::string& p_Text)
++{
++  static const std::regex url("(https?://(www\\.)?|www\\.)([^/\\s?#:]+)\\S*", std::regex::icase);
++  if ((p_Text.find("http") == std::string::npos) && (p_Text.find("www.") == std::string::npos)) return p_Text;
++
++  return std::regex_replace(p_Text, url, "link $3");
++}
++
++// Attachment name shown in the history: one short word (with the size from the
++// file name, <id>_<kb>k), and voice notes as "audio mm.ss", with the duration
++// from the file name (<id>.<secs>s.oga) or from the downloaded file
 +static std::string AttachmentName(const std::string& p_FilePath)
 +{
 +  static const std::regex audioExt("\\.(oga|ogg|opus|mp3|m4a|aac|amr|wav)$", std::regex::icase);
-+  static const std::regex imageExt("\\.(jpe?g|png|gif|heic)$", std::regex::icase);
++  static const std::regex gifExt("\\.gif(\\.mp4)?$", std::regex::icase);
++  static const std::regex imageExt("\\.(jpe?g|png|heic)$", std::regex::icase);
 +  static const std::regex videoExt("\\.(mp4|3gp|mov|mkv|webm)$", std::regex::icase);
 +  static const std::regex stickerExt("\\.webp$", std::regex::icase);
 +  static const std::regex secsInName("\\.([0-9]+)s\\.[A-Za-z0-9]+$");
++  static const std::regex kbInName("^[0-9A-Za-z]+_([0-9]+)k[.-]");
 +  static std::unordered_map<std::string, int> durations;
 +
 +  const std::string name = FileUtil::BaseName(p_FilePath);
 +  if (name.empty()) return name;
-+  if (std::regex_search(name, imageExt)) return "imagen";
-+  if (std::regex_search(name, videoExt)) return "video";
++  std::smatch kb;
++  const std::string size = std::regex_search(name, kb, kbInName) ? " " + kb[1].str() + " KB" : "";
++  if (std::regex_search(name, gifExt)) return "gif" + size;
++  if (std::regex_search(name, imageExt)) return "imagen" + size;
++  if (std::regex_search(name, videoExt)) return "video" + size;
 +  if (std::regex_search(name, stickerExt)) return "sticker";
 +  if (!std::regex_search(name, audioExt))
 +  {
 +    const std::string ext = StrUtil::ToLower(FileUtil::GetFileExt(name));
-+    return (ext.size() > 1) ? "documento " + ext.substr(1) : "documento";
++    return ((ext.size() > 1) ? "documento " + ext.substr(1) : "documento") + size;
 +  }
 +
 +  auto it = durations.find(p_FilePath);
@@ -113,7 +179,7 @@ index 7f1fecab..fafcffe1 100644
  void UiHistoryView::Draw()
  {
    if (!m_Enabled || !m_Dirty) return;
-@@ -68,8 +147,9 @@ void UiHistoryView::Draw()
+@@ -68,8 +161,9 @@ void UiHistoryView::Draw()
    static int attributeNameNormal = UiColorConfig::GetAttribute("history_name_attr");
    static int attributeNameSelected = UiColorConfig::GetAttribute("history_name_attr_selected");
  
@@ -124,7 +190,25 @@ index 7f1fecab..fafcffe1 100644
    static std::wstring quoteIndicator = L"> ";
  
    std::pair<std::string, std::string>& currentChat = m_Model->GetCurrentChatLocked();
-@@ -160,7 +240,7 @@ void UiHistoryView::Draw()
+@@ -124,7 +218,7 @@ void UiHistoryView::Draw()
+     std::vector<std::wstring> wlines;
+     if (!msg.text.empty())
+     {
+-      std::string text = msg.text;
++      std::string text = LinkText(msg.text);
+       StrUtil::SanitizeMessageStr(text);
+       if (!emojiEnabled)
+       {
+@@ -147,7 +241,7 @@ void UiHistoryView::Draw()
+       {
+         if (!quotedIt->second.text.empty())
+         {
+-          quotedText = StrUtil::Split(quotedIt->second.text, '\n').at(0);
++          quotedText = LinkText(StrUtil::Split(quotedIt->second.text, '\n').at(0));
+           if (!emojiEnabled)
+           {
+             quotedText = StrUtil::Textize(quotedText);
+@@ -160,7 +254,7 @@ void UiHistoryView::Draw()
          else if (!quotedIt->second.fileInfo.empty())
          {
            FileInfo fileInfo = ProtocolUtil::FileInfoFromHex(quotedIt->second.fileInfo);
@@ -133,7 +217,7 @@ index 7f1fecab..fafcffe1 100644
          }
        }
        else
-@@ -199,7 +279,7 @@ void UiHistoryView::Draw()
+@@ -199,7 +293,7 @@ void UiHistoryView::Draw()
          }
        }
  
@@ -142,7 +226,7 @@ index 7f1fecab..fafcffe1 100644
        std::string fileStatus;
        if (fileInfo.fileStatus == FileStatusNone)
        {
-@@ -328,7 +408,8 @@ void UiHistoryView::Draw()
+@@ -328,7 +422,8 @@ void UiHistoryView::Draw()
  
      for (auto wline = wlines.rbegin(); wline != wlines.rend(); ++wline)
      {
