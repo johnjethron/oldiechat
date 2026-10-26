@@ -18,6 +18,7 @@
   (`imagen 45 KB`).
 - **Enlaces como `link dominio`** (`link youtube.com`); el resto del texto queda
   igual y no se muestra la vista previa.
+- **Logo en la guía** (Vol. abajo + G), en 2 filas sobre los atajos.
 - **Ícono nuevo** (bufón con globo), generado desde `phone/oldiechat-logo.svg`
   con `scripts/make-icon.sh`.
 - **wsp**: primero comprueba el permiso de SuperSU y avisa si falta; pasa los
