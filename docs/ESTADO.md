@@ -12,7 +12,9 @@ Java que reutiliza el motor (`engine/`); su arquitectura está propuesta en
 `docs/APP_ARCHITECTURE.md` y la interfaz todavía no se empieza.
 
 Teléfono de pruebas: Samsung Galaxy Fame GT-S6810L, Android 4.1.2, kernel 3.0.15,
-Cortex-A9, root con SuperSU, conectado por ADB. Repositorio:
+Cortex-A9, root con SuperSU, conectado por ADB. Terminal en TermOne Plus con el
+teclado abierto: 53 columnas y 15 filas (`echo $COLUMNS $LINES`); la guía con el
+logo ocupa 13 filas (10 líneas, borde y margen). Repositorio:
 github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Qué está hecho (versión en `VERSION`)
