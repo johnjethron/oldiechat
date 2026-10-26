@@ -27,6 +27,7 @@ Forma de trabajar:
 - Haz commit al terminar cada paso. No subas nada a GitHub; eso lo hago yo.
 - Si algo parece no tener solución, dímelo directo antes de seguir intentando.
 - Avísame cuando necesites que haga algo en el teléfono.
+- Cuando te diga 'terminamos por hoy', actualiza docs/ESTADO.md con el estado exacto (qué está hecho, en qué rama, qué falta compilar o probar, y qué sigue) y haz commit. No compiles.
 
 ## Reglas técnicas del repositorio
 
