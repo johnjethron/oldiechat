@@ -88,7 +88,7 @@ push_files() {
     adb push "${PKG}/oldiechat.png" /sdcard/OldieChat/oldiechat.png
   fi
 
-  printf '#!/system/bin/sh\nsu -c "TERM=${TERM:-screen-256color} %s/oldiechat.sh"\n' "${DEST}" > "${TMPDIR:-/tmp}/wsp.$$"
+  printf '#!/system/bin/sh\nsu -c true || { echo "wsp: SuperSU no dio permiso. Abre SuperSU, borra TermOne Plus y vuelve a darle permiso con Recordar" >&2; exit 1; }\nsu -c "TERM=${TERM:-screen-256color} %s/oldiechat.sh $*"\n' "${DEST}" > "${TMPDIR:-/tmp}/wsp.$$"
   adb push "${TMPDIR:-/tmp}/wsp.$$" "${STAGE}/wsp"
   rm -f "${TMPDIR:-/tmp}/wsp.$$"
 

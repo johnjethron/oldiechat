@@ -13,6 +13,15 @@
 - Compilación sin internet: lo que cambia en nchat al actualizar whatsmeow
   (fecha, `go.mod`, licencias) queda en el parche generado
   `nchat/patches/0012-whatsmeow-version.patch`.
+- **Adjuntos con etiqueta corta**: `imagen`, `gif`, `video`, `sticker` y
+  `documento pdf`, con el tamaño en KB cuando viene en el mensaje
+  (`imagen 45 KB`).
+- **Enlaces como `link dominio`** (`link youtube.com`); el resto del texto queda
+  igual y no se muestra la vista previa.
+- **Ícono nuevo** (bufón con globo), generado desde `phone/oldiechat-logo.svg`
+  con `scripts/make-icon.sh`.
+- **wsp**: primero comprueba el permiso de SuperSU y avisa si falta; pasa los
+  argumentos a OldieChat (`wsp --version` ya no abre la sesión).
 
 ## 0.2.1
 

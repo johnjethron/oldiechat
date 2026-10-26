@@ -136,7 +136,9 @@ In **Preferences**:
 
 Then close TermOne Plus completely and open it again.
 
-To open OldieChat, type `wsp` in TermOne Plus.
+To open OldieChat, type `wsp` in TermOne Plus. The first time, SuperSU asks
+for permission: grant it with "Remember" checked. If it fails, remove TermOne
+Plus in SuperSU and try again.
 
 ## Home screen shortcut with icon (Nova Launcher)
 

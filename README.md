@@ -136,7 +136,9 @@ En **Preferencias**:
 
 Después cierra TermOne Plus del todo y vuelve a abrirlo.
 
-Para abrir OldieChat escribe `wsp` en TermOne Plus.
+Para abrir OldieChat escribe `wsp` en TermOne Plus. La primera vez aparece
+SuperSU: da permiso marcando "Recordar". Si falla, borra TermOne Plus en SuperSU
+y vuelve a intentarlo.
 
 ## Acceso directo con ícono (Nova Launcher)
 
