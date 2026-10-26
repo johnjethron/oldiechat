@@ -42,6 +42,30 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   zona horaria, protocolo JSON por stdin/stdout); compila y `selftest` pasa en el
   teléfono, **nunca se conectó al servidor**.
 
+## En curso (0.2.2, sin publicar)
+
+- `VERSION` dice 0.2.2. Lo del Área 1 (Go 1.26.10, parche de musl propio,
+  whatsmeow b2b1e71, `update-whatsmeow.sh`) está en `main` (rama `motor`, ya
+  unida): se compiló e instaló en el Fame y `phone-test.sh --sound` pasó, con el
+  paquete todavía llamado 0.2.1 en `out/`.
+- Rama `usuarios` (Área 3), **sin compilar**: etiquetas cortas de adjuntos en el
+  parche `0010-attachment-labels.patch` (`imagen`, `video`, `sticker`,
+  `documento pdf`; commits 4707d31 y 272a556). Falta anotarlas en `CHANGELOG.md`.
+- Rama `usuarios`: ícono nuevo (bufón con globo) generado desde
+  `phone/oldiechat-logo.svg` con `scripts/make-icon.sh` (commit e6c5782); ya
+  está en el Fame en `/sdcard/OldieChat/oldiechat.png`. Falta anotarlo en
+  `CHANGELOG.md`.
+- **Pendiente en el Fame**: el acceso directo de Nova no se puede crear por ADB
+  (TermOne Plus cifra el comando). Se intentó cambiar solo su ícono en la base
+  de Nova con root; en el intento el sistema se reinició (watchdog) y Nova
+  escribió encima de la base. No se sabe cómo quedó la pantalla de inicio:
+  revisarla. Si se perdió, la base original está en
+  `work/nova/launcher-respaldo.db`. El ícono se cambia a mano: mantener
+  apretado OldieChat, Editar, tocar el ícono y elegir
+  `/sdcard/OldieChat/oldiechat.png`. No volver a editar la base de Nova en caliente.
+- Lo siguiente: logo ASCII en la guía (Área 3, etapa 5). Después compilar,
+  probar en el Fame y publicar la 0.2.2 (pasos en `MAINTAINING.md`).
+
 ## Archivos
 
 | Ruta | Para qué |
@@ -53,15 +77,13 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 | `engine/` | motor Go: `audio/oggopus`, `netcfg`, `tz`, `wa`, `cmd/` |
 | `player/` | Java por `app_process`: reproductor y `GlyphProbe` |
 | `phone/` | lo que va al teléfono: `oldiechat.sh`, `audio.sh`, `install.sh`, ícono, `config/`, `fonts/`, `licenses/` |
-| `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.py`, `check-go-version.sh`, `update-whatsmeow.sh`, `vendor-go.sh` |
+| `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.sh`, `check-go-version.sh`, `update-whatsmeow.sh`, `vendor-go.sh` |
 | `tests/data/` | audio de prueba |
 | `docs/` | este archivo y la arquitectura de la app |
 | `work/`, `out/` | generados, fuera de git |
 
 ## Cómo se trabaja
 
-- `VERSION` dice 0.2.2, pero el paquete en `out/` es del 0.2.1: se recompila
-  en la próxima compilación.
 - Compilar: `./build.sh` (unos 55 minutos, emulado). Instalar:
   `out/oldiechat-terminal-<v>-armv7/install.sh`. Probar:
   `scripts/phone-test.sh --sound`.
