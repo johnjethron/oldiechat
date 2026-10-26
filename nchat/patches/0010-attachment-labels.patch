@@ -17,7 +17,7 @@ index 37d3a2d1..fe846555 100644
  	fileStatus := FileStatusNotDownloaded
  
 diff --git a/src/uihistoryview.cpp b/src/uihistoryview.cpp
-index 7f1fecab..a008a45e 100644
+index 7f1fecab..dec7c822 100644
 --- a/src/uihistoryview.cpp
 +++ b/src/uihistoryview.cpp
 @@ -7,6 +7,10 @@
@@ -31,7 +31,7 @@ index 7f1fecab..a008a45e 100644
  #include "appconfig.h"
  #include "apputil.h"
  #include "fileutil.h"
-@@ -48,6 +52,69 @@ UiHistoryView::~UiHistoryView()
+@@ -48,6 +52,77 @@ UiHistoryView::~UiHistoryView()
    }
  }
  
@@ -60,16 +60,24 @@ index 7f1fecab..a008a45e 100644
 +  return (granule > 0) ? (int)(granule / 48000) : -1;
 +}
 +
-+// Attachment name shown in the history: voice notes as "audio mm.ss", with the
-+// duration from the file name (<id>.<secs>s.oga) or from the downloaded file
++// Attachment name shown in the history: one short word, and voice notes as
++// "audio mm.ss", with the duration from the file name (<id>.<secs>s.oga) or
++// from the downloaded file
 +static std::string AttachmentName(const std::string& p_FilePath)
 +{
 +  static const std::regex audioExt("\\.(oga|ogg|opus|mp3|m4a|aac|amr|wav)$", std::regex::icase);
++  static const std::regex imageExt("\\.(jpe?g|png|gif|heic)$", std::regex::icase);
++  static const std::regex videoExt("\\.(mp4|3gp|mov|mkv|webm)$", std::regex::icase);
++  static const std::regex stickerExt("\\.webp$", std::regex::icase);
 +  static const std::regex secsInName("\\.([0-9]+)s\\.[A-Za-z0-9]+$");
 +  static std::unordered_map<std::string, int> durations;
 +
 +  const std::string name = FileUtil::BaseName(p_FilePath);
-+  if (!std::regex_search(name, audioExt)) return name;
++  if (name.empty()) return name;
++  if (std::regex_search(name, imageExt)) return "imagen";
++  if (std::regex_search(name, videoExt)) return "video";
++  if (std::regex_search(name, stickerExt)) return "sticker";
++  if (!std::regex_search(name, audioExt)) return "documento";
 +
 +  auto it = durations.find(p_FilePath);
 +  int secs = (it != durations.end()) ? it->second : -1;
@@ -101,7 +109,7 @@ index 7f1fecab..a008a45e 100644
  void UiHistoryView::Draw()
  {
    if (!m_Enabled || !m_Dirty) return;
-@@ -68,8 +135,9 @@ void UiHistoryView::Draw()
+@@ -68,8 +143,9 @@ void UiHistoryView::Draw()
    static int attributeNameNormal = UiColorConfig::GetAttribute("history_name_attr");
    static int attributeNameSelected = UiColorConfig::GetAttribute("history_name_attr_selected");
  
@@ -112,7 +120,7 @@ index 7f1fecab..a008a45e 100644
    static std::wstring quoteIndicator = L"> ";
  
    std::pair<std::string, std::string>& currentChat = m_Model->GetCurrentChatLocked();
-@@ -160,7 +228,7 @@ void UiHistoryView::Draw()
+@@ -160,7 +236,7 @@ void UiHistoryView::Draw()
          else if (!quotedIt->second.fileInfo.empty())
          {
            FileInfo fileInfo = ProtocolUtil::FileInfoFromHex(quotedIt->second.fileInfo);
@@ -121,7 +129,7 @@ index 7f1fecab..a008a45e 100644
          }
        }
        else
-@@ -199,7 +267,7 @@ void UiHistoryView::Draw()
+@@ -199,7 +275,7 @@ void UiHistoryView::Draw()
          }
        }
  
@@ -130,7 +138,7 @@ index 7f1fecab..a008a45e 100644
        std::string fileStatus;
        if (fileInfo.fileStatus == FileStatusNone)
        {
-@@ -328,7 +396,8 @@ void UiHistoryView::Draw()
+@@ -328,7 +404,8 @@ void UiHistoryView::Draw()
  
      for (auto wline = wlines.rbegin(); wline != wlines.rend(); ++wline)
      {
