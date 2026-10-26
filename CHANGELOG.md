@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.2
+
+- **Go 1.26.10** (antes 1.26.3), con las correcciones de seguridad de esa rama.
+- **Parche de musl propio** (Go PR #69325) en `go/patches/`: ya no se toma de
+  nchat. `MAINTAINING.md` explica cómo reaplicarlo en otra versión de Go
+  (entra sin cambios en Go 1.27.3).
+- **whatsmeow al día** (b2b1e71, 17 de octubre de 2026) en la terminal y en el
+  motor, sin esperar un commit nuevo de nchat.
+- `scripts/update-whatsmeow.sh [commit]`: actualiza whatsmeow en un solo paso;
+  `scripts/check-go-version.sh` dice cuántos commits vamos atrasados.
+- Compilación sin internet: lo que cambia en nchat al actualizar whatsmeow
+  (fecha, `go.mod`, licencias) queda en el parche generado
+  `nchat/patches/0012-whatsmeow-version.patch`.
+
 ## 0.2.1
 
 - **Atajos mínimos**: solo Vol. arriba + W/S/A/D, Enter y Vol. abajo + A
