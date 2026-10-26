@@ -42,6 +42,18 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   zona horaria, protocolo JSON por stdin/stdout); compila y `selftest` pasa en el
   teléfono, **nunca se conectó al servidor**.
 
+## En curso (0.2.2, sin publicar)
+
+- `VERSION` dice 0.2.2. Lo del Área 1 (Go 1.26.10, parche de musl propio,
+  whatsmeow b2b1e71, `update-whatsmeow.sh`) está en `main` (rama `motor`, ya
+  unida): se compiló e instaló en el Fame y `phone-test.sh --sound` pasó, con el
+  paquete todavía llamado 0.2.1 en `out/`.
+- Rama `usuarios` (Área 3), **sin compilar**: etiquetas cortas de adjuntos en el
+  parche `0010-attachment-labels.patch` (`imagen`, `video`, `sticker`,
+  `documento pdf`; commits 4707d31 y 272a556). Falta anotarlas en `CHANGELOG.md`.
+- Lo siguiente: logo ASCII en la guía (Área 3, etapa 5). Después compilar,
+  probar en el Fame y publicar la 0.2.2 (pasos en `MAINTAINING.md`).
+
 ## Archivos
 
 | Ruta | Para qué |
@@ -60,8 +72,6 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Cómo se trabaja
 
-- `VERSION` dice 0.2.2, pero el paquete en `out/` es del 0.2.1: se recompila
-  en la próxima compilación.
 - Compilar: `./build.sh` (unos 55 minutos, emulado). Instalar:
   `out/oldiechat-terminal-<v>-armv7/install.sh`. Probar:
   `scripts/phone-test.sh --sound`.
