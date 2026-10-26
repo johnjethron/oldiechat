@@ -1,5 +1,12 @@
 # OldieChat terminal
 
+```
+ o   o   o
+  \_/ \_/
+  ( ^_^ )
+ OldieChat
+```
+
 [Español](README.md) · **English**
 
 A terminal messaging client **compatible with WhatsApp** for old Android phones
