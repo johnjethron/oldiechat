@@ -45,7 +45,7 @@ docker save oldiechat-builder | gzip > oldiechat-builder-<versión>.tar.gz
 
 ## Si Go deja de funcionar en kernels antiguos
 
-Go 1.24 o más nuevo pide oficialmente Linux 3.2; el Galaxy Fame tiene 3.0.101 y
+Go 1.24 o más nuevo pide oficialmente Linux 3.2; el Galaxy Fame tiene 3.0.15 y
 hoy funciona. Si una versión nueva de Go falla en el teléfono:
 
 **Síntomas**: el binario termina apenas arranca, con `bad system call`
@@ -168,7 +168,7 @@ Para cambiar la versión de la fuente de emoji: actualiza `NOTO_EMOJI_COMMIT` y
 no implementada, es emular un ARMv7 con kernel 3.0 en `qemu-system-arm`:
 
 - **Cómo**: placa `vexpress-a9` (Cortex-A9, como el Galaxy Fame) con un kernel
-  3.0.101 de kernel.org (`vexpress_defconfig`) y un initramfs con los binarios
+  3.0.15 de kernel.org (`vexpress_defconfig`) y un initramfs con los binarios
   estáticos y un `busybox`, con red emulada para DNS y HTTPS.
 - **Dificultad**: un kernel 3.0 no compila con un GCC moderno; hace falta una
   toolchain de la época (GCC 4.x) dentro de un contenedor viejo de Debian.

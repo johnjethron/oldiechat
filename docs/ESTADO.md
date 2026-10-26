@@ -11,7 +11,7 @@ TermOne Plus en un Android 4.x con root. La siguiente etapa es una app Android e
 Java que reutiliza el motor (`engine/`); su arquitectura está propuesta en
 `docs/APP_ARCHITECTURE.md` y la interfaz todavía no se empieza.
 
-Teléfono de pruebas: Samsung Galaxy Fame GT-S6810L, Android 4.1.2, kernel 3.0,
+Teléfono de pruebas: Samsung Galaxy Fame GT-S6810L, Android 4.1.2, kernel 3.0.15,
 Cortex-A9, root con SuperSU, conectado por ADB. Repositorio:
 github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
@@ -19,7 +19,11 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 - Compilación reproducible (`build.sh`) en un contenedor Alpine armv7 con qemu:
   versiones y checksums en `versions.env`, dependencias Go guardadas, sin
-  internet para la parte Go.
+  internet para la parte Go. Go 1.26.10 con el parche de musl propio
+  (`go/patches/`, Go PR #69325).
+- whatsmeow al día sin esperar a nchat: `scripts/update-whatsmeow.sh` fija
+  `WHATSMEOW_COMMIT` y actualiza la terminal y el motor en un solo paso
+  (hoy b2b1e71, 17 de octubre de 2026).
 - Instalación por ADB (`phone/install.sh`): programa en `/data/local/tmp/oldiechat`,
   DNS y certificados en `/system`, comando `wsp`, ícono para Nova Launcher,
   fuente Noto Emoji en `/system/fonts` (respaldo `.orig` de las listas de fuentes).
@@ -45,20 +49,24 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 | `build.sh`, `Dockerfile.armv7`, `versions.env`, `VERSION` | compilación |
 | `nchat/patches/` | parches a nchat, numerados; la tabla está en el README |
 | `nchat/vendor/` | dependencias Go de nchat (`scripts/vendor-go.sh`) |
-| `go/patches/` | parches propios al runtime de Go (vacío) |
+| `go/patches/` | parches propios al runtime de Go: el de musl (Go PR #69325) |
 | `engine/` | motor Go: `audio/oggopus`, `netcfg`, `tz`, `wa`, `cmd/` |
 | `player/` | Java por `app_process`: reproductor y `GlyphProbe` |
 | `phone/` | lo que va al teléfono: `oldiechat.sh`, `audio.sh`, `install.sh`, ícono, `config/`, `fonts/`, `licenses/` |
-| `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.py`, `check-go-version.sh`, `vendor-go.sh` |
+| `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.py`, `check-go-version.sh`, `update-whatsmeow.sh`, `vendor-go.sh` |
 | `tests/data/` | audio de prueba |
 | `docs/` | este archivo y la arquitectura de la app |
 | `work/`, `out/` | generados, fuera de git |
 
 ## Cómo se trabaja
 
-- Compilar: `./build.sh` (lento, emulado). Instalar:
+- `VERSION` dice 0.2.2, pero el paquete en `out/` es del 0.2.1: se recompila
+  en la próxima compilación.
+- Compilar: `./build.sh` (unos 55 minutos, emulado). Instalar:
   `out/oldiechat-terminal-<v>-armv7/install.sh`. Probar:
   `scripts/phone-test.sh --sound`.
+- Actualizar whatsmeow: `scripts/update-whatsmeow.sh` (con internet);
+  `scripts/check-go-version.sh` dice cuántos commits vamos atrasados.
 - Si cambian las fuentes del teléfono: `scripts/glyphs.sh` (unos 9 minutos).
 - Registros en el teléfono: `home/.config/nchat/log.txt*` (6 sesiones) y
   `home/audio.log`.

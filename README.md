@@ -45,7 +45,7 @@ pasión y ganas pueda crear cosas como esta. Yo lo logré, y tú también puedes
 
 Por ahora no envía audios, imágenes ni archivos, ni muestra imágenes.
 
-Probado en un **Samsung Galaxy Fame GT-S6810L** (Android 4.1.2, kernel 3.0.101,
+Probado en un **Samsung Galaxy Fame GT-S6810L** (Android 4.1.2, kernel 3.0.15,
 Cortex-A9, 512 MB de RAM, root con SuperSU).
 
 ## Requisitos
@@ -220,7 +220,7 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
   área de escritura.
 - Sin portapapeles del sistema, sin envío de audios, imágenes ni archivos, y sin
   vista de imágenes.
-- Go 1.26 pide oficialmente un kernel Linux 3.2 o más nuevo; en el kernel 3.0.101
+- Go 1.26 pide oficialmente un kernel Linux 3.2 o más nuevo; en el kernel 3.0.15
   del Galaxy Fame funciona.
 - Solo se ha probado en un Galaxy Fame. Otros Android 4.x ARMv7 con root
   deberían funcionar; para que los emoji se vean bien en otro modelo, vuelve a

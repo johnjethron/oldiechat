@@ -45,7 +45,7 @@ drive build things like this. I did it, and you can too.
 
 For now it does not send voice notes, images or files, and does not show images.
 
-Tested on a **Samsung Galaxy Fame GT-S6810L** (Android 4.1.2, kernel 3.0.101,
+Tested on a **Samsung Galaxy Fame GT-S6810L** (Android 4.1.2, kernel 3.0.15,
 Cortex-A9, 512 MB RAM, rooted with SuperSU).
 
 ## Requirements
@@ -218,7 +218,7 @@ su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
 - No system clipboard, no sending of voice notes, images or files, and no image
   viewer.
 - Go 1.26 officially requires Linux kernel 3.2 or newer; it works on the Galaxy
-  Fame's 3.0.101 kernel.
+  Fame's 3.0.15 kernel.
 - Only tested on a Galaxy Fame. Other rooted Android 4.x ARMv7 phones should
   work; for good emoji rendering on another model, measure it again with
   `scripts/glyphs.sh` (see below).

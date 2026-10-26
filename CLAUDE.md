@@ -5,7 +5,7 @@ Al empezar, lee `docs/ESTADO.md` (qué está hecho y para qué sirve cada carpet
 Proyecto: OldieChat (github.com/johnjethron/oldiechat). Cliente no oficial compatible con WhatsApp para teléfonos antiguos y dumbphones. Versión publicada: 0.2.1 (terminal, basada en nchat y whatsmeow).
 
 Teléfonos de prueba:
-- Samsung Galaxy Fame GT-S6810L: Android 4.1.2, kernel 3.0.101, ARMv7 Cortex-A9, 512 MB de RAM, con root (SuperSU), conectado por USB con ADB. Usa TermOne Plus como terminal y el comando /system/bin/wsp para abrir OldieChat.
+- Samsung Galaxy Fame GT-S6810L: Android 4.1.2, kernel 3.0.15, ARMv7 Cortex-A9, 512 MB de RAM, con root (SuperSU), conectado por USB con ADB. Usa TermOne Plus como terminal y el comando /system/bin/wsp para abrir OldieChat.
 - Por conseguir: un Android 2.3 con ARMv6 y menos de 300 MB de RAM (Samsung Galaxy Y GT-S5360L o Galaxy Ace GT-S5830), y dumbphones de cada tipo.
 - Objetivo en dumbphones: rescatar teléfonos de teclas antiguos, no comprar nuevos. Sin navegador. Los de sistema cerrado llegan por un puente SMS, y los que tienen Java (J2ME) y 3G, por un cliente J2ME con datos.
 
