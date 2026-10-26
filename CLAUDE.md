@@ -4,15 +4,15 @@ Al empezar, lee `docs/ESTADO.md` (qué está hecho y para qué sirve cada carpet
 
 Proyecto: OldieChat (github.com/johnjethron/oldiechat). Cliente no oficial compatible con WhatsApp para teléfonos antiguos y dumbphones. Versión publicada: 0.2.1 (terminal, basada en nchat y whatsmeow).
 
+Usuario: la persona que quiere dejar el smartphone y prueba un dumbphone, o que quiere usar un Android 4G guardado como teléfono simple. Un teléfono soportado tiene que llamar y enviar SMS en las redes actuales. Plataformas: Android (con teclas y Android 4G reutilizados), app nativa; KaiOS 2.5, plataforma importante a explorar con un Nokia 6300 4G; dumbphones de sistema cerrado: puente SMS, con mensajes que se piden. El Fame es el banco de pruebas donde se construye el motor. Toda interfaz nueva debe poder usarse solo con teclado físico (teclado numérico, cruceta y teclas de función).
+
 Teléfonos de prueba:
 - Samsung Galaxy Fame GT-S6810L: Android 4.1.2, kernel 3.0.15, ARMv7 Cortex-A9, 512 MB de RAM, con root (SuperSU), conectado por USB con ADB. Usa TermOne Plus como terminal y el comando /system/bin/wsp para abrir OldieChat.
-- Por conseguir: un Android 2.3 con ARMv6 y menos de 300 MB de RAM (Samsung Galaxy Y GT-S5360L o Galaxy Ace GT-S5830), y dumbphones de cada tipo.
-- Objetivo en dumbphones: rescatar teléfonos de teclas antiguos, no comprar nuevos. Sin navegador. Los de sistema cerrado llegan por un puente SMS, y los que tienen Java (J2ME) y 3G, por un cliente J2ME con datos.
 
 Equipo de compilación: Linux Mint (base Ubuntu 24.04) en un MacBook Air, x86_64, con Docker, qemu-user-static, ADB, gh y Claude Code.
 
 Principios del proyecto, en orden de importancia:
-1. Ningún teléfono antiguo debe quedar sin soporte. La compatibilidad es hacia atrás: distintos Android antiguos, procesadores y dumbphones, no solo el Fame. Las versiones nuevas de Android se soportan solo si no agregan peso ni complejidad.
+1. OldieChat existe para que nadie tenga que volver al smartphone por falta de WhatsApp. Solo se soportan teléfonos que llaman y envían SMS en las redes actuales. Reutilizar teléfonos antiguos es bienvenido cuando cumplen eso.
 2. whatsmeow siempre se mantiene en su versión más reciente. Nosotros adaptamos Go con parches propios para que siga funcionando en kernels antiguos. No se depende de otro dispositivo para que el teléfono funcione.
 3. Liviandad: el objetivo son teléfonos con 256 a 512 MB de RAM.
 4. Simple, intuitivo y ordenado: minimalismo digital, también en el código.
