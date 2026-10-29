@@ -44,29 +44,25 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   zona horaria, protocolo JSON por stdin/stdout); compila y `selftest` pasa en el
   teléfono, **nunca se conectó al servidor**.
 
-## En curso (0.2.2, sin publicar)
+## Versión 0.2.2 (etiquetada, sin publicar)
 
-- `VERSION` dice 0.2.2. Lo del Área 1 (Go 1.26.10, parche de musl propio,
-  whatsmeow b2b1e71, `update-whatsmeow.sh`) está en `main` (rama `motor`, ya
-  unida): se compiló e instaló en el Fame y `phone-test.sh --sound` pasó, con el
-  paquete todavía llamado 0.2.1 en `out/`.
-- Rama `usuarios` (Área 3), **sin compilar**: etiquetas cortas de adjuntos en el
-  parche `0010-attachment-labels.patch` (`imagen`, `video`, `sticker`,
-  `documento pdf`; commits 4707d31 y 272a556). Falta anotarlas en `CHANGELOG.md`.
-- Rama `usuarios`: ícono nuevo (bufón con globo) generado desde
-  `phone/oldiechat-logo.svg` con `scripts/make-icon.sh` (commit e6c5782); ya
-  está en el Fame en `/sdcard/OldieChat/oldiechat.png`. Falta anotarlo en
-  `CHANGELOG.md`.
-- **Pendiente en el Fame**: el acceso directo de Nova no se puede crear por ADB
-  (TermOne Plus cifra el comando). Se intentó cambiar solo su ícono en la base
-  de Nova con root; en el intento el sistema se reinició (watchdog) y Nova
-  escribió encima de la base. No se sabe cómo quedó la pantalla de inicio:
-  revisarla. Si se perdió, la base original está en
-  `work/nova/launcher-respaldo.db`. El ícono se cambia a mano: mantener
-  apretado OldieChat, Editar, tocar el ícono y elegir
-  `/sdcard/OldieChat/oldiechat.png`. No volver a editar la base de Nova en caliente.
-- Lo siguiente: logo ASCII en la guía (Área 3, etapa 5). Después compilar,
-  probar en el Fame y publicar la 0.2.2 (pasos en `MAINTAINING.md`).
+- `main`, etiqueta `v0.2.2`; las ramas `motor` y `usuarios` ya están unidas.
+  Falta que el dueño suba `main`, la etiqueta y los paquetes a GitHub.
+- Incluye Go 1.26.10 con el parche de musl propio, whatsmeow b2b1e71, etiquetas
+  cortas de adjuntos y `link dominio`, logo en la guía con una línea en blanco
+  debajo, ícono nuevo y `wsp` que comprueba SuperSU. `wsp --version` muestra
+  versión (de `VERSION`, que va en el paquete), autor y licencia sin pedir root.
+- Paquetes en `out/`: nchat compilado el 26/10; los `.tar.gz` se rearmaron el
+  29/10 sin recompilar, por cambios solo en `install.sh`, `guide.txt` y `VERSION`.
+- Instalada en el Fame: `phone-test.sh --sound` dio "Todo pasó" (el tono sonó) y
+  el dueño probó a mano mensajes, audios, adjuntos, enlaces, guía, `wsp --version`
+  e ícono en Nova.
+- `work/nchat/.gotools` (caché Go de 255 MB, del 25/10) no lo crea `build.sh` y
+  entra en el paquete de código fuente; revisar si se quita.
+
+## Qué sigue
+
+- Área 3, etapa 3: logo grande al iniciar.
 
 ## Archivos
 
