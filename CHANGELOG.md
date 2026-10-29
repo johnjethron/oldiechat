@@ -22,7 +22,8 @@
 - **Ícono nuevo** (bufón con globo), generado desde `phone/oldiechat-logo.svg`
   con `scripts/make-icon.sh`.
 - **wsp**: primero comprueba el permiso de SuperSU y avisa si falta; pasa los
-  argumentos a OldieChat (`wsp --version` ya no abre la sesión).
+  argumentos a OldieChat. `wsp --version` muestra la versión, el autor y la
+  licencia, sin pedir root.
 
 ## 0.2.1
 

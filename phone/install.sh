@@ -88,7 +88,7 @@ push_files() {
     adb push "${PKG}/oldiechat.png" /sdcard/OldieChat/oldiechat.png
   fi
 
-  printf '#!/system/bin/sh\nsu -c true || { echo "wsp: SuperSU no dio permiso. Abre SuperSU, borra TermOne Plus y vuelve a darle permiso con Recordar" >&2; exit 1; }\nsu -c "TERM=${TERM:-screen-256color} %s/oldiechat.sh $*"\n' "${DEST}" > "${TMPDIR:-/tmp}/wsp.$$"
+  printf '#!/system/bin/sh\nif [ "$1" = --version ]; then\n  echo "OldieChat %s (c) 2026 John Jethron"\n  echo "Basado en nchat (c) Kristofer Berggren"\n  echo "Licencia GNU GPL v3"\n  exit 0\nfi\nsu -c true || { echo "wsp: SuperSU no dio permiso. Abre SuperSU, borra TermOne Plus y vuelve a darle permiso con Recordar" >&2; exit 1; }\nsu -c "TERM=${TERM:-screen-256color} %s/oldiechat.sh $*"\n' "$(cat "${PKG}/VERSION")" "${DEST}" > "${TMPDIR:-/tmp}/wsp.$$"
   adb push "${TMPDIR:-/tmp}/wsp.$$" "${STAGE}/wsp"
   rm -f "${TMPDIR:-/tmp}/wsp.$$"
 

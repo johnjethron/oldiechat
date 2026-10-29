@@ -182,7 +182,7 @@ package() {
   if command -v qemu-arm-static >/dev/null; then
     qemu-arm-static "${OUT}/bin/nchat" --version | head -1
   fi
-  cp "${HERE}/README.md" "${HERE}/README.en.md" "${OUT}/"
+  cp "${HERE}/README.md" "${HERE}/README.en.md" "${HERE}/VERSION" "${OUT}/"
   tar -C "${HERE}/out" -czf "${OUT}.tar.gz" "${NAME}"
   (cd "${HERE}/out" && sha256sum "${NAME}.tar.gz" > "${NAME}.tar.gz.sha256")
   ls -lh "${OUT}.tar.gz"
