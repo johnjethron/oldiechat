@@ -44,10 +44,12 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   zona horaria, protocolo JSON por stdin/stdout); compila y `selftest` pasa en el
   teléfono, **nunca se conectó al servidor**.
 
-## Versión 0.2.2 (etiquetada, sin publicar)
+## Versión 0.2.2 (publicada en GitHub)
 
 - `main`, etiqueta `v0.2.2`; las ramas `motor` y `usuarios` ya están unidas.
-  Falta que el dueño suba `main`, la etiqueta y los paquetes a GitHub.
+  No hay nada sin compilar ni sin probar.
+- `CLAUDE.md` tiene los productos nuevos (OldieChat App y OldieChat SMS), los 5
+  principios con el minimalismo primero y las reglas de ahorro de uso.
 - Incluye Go 1.26.10 con el parche de musl propio, whatsmeow b2b1e71, etiquetas
   cortas de adjuntos y `link dominio`, logo en la guía con una línea en blanco
   debajo, ícono nuevo y `wsp` que comprueba SuperSU. `wsp --version` muestra
@@ -62,7 +64,8 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Qué sigue
 
-- Área 3, etapa 3: logo grande al iniciar.
+- Área 5, etapa 0: prueba rápida de OldieChat SMS en el Fame.
+- Después: logo grande al iniciar (Área 3, etapa 3).
 
 ## Archivos
 
