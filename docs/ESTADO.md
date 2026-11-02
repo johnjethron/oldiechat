@@ -100,7 +100,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Cómo se trabaja
 
-- Compilar: `./build.sh` (unos 55 minutos, emulado). Instalar:
+- Compilar: `./build.sh` (4 min 10 s con la caché de `work/`, medido el 2 de noviembre de 2026 en el PC con CachyOS; emulado). Instalar:
   `out/oldiechat-terminal-<v>-armv7/install.sh`. Probar:
   `scripts/phone-test.sh --sound`.
 - Actualizar whatsmeow: `scripts/update-whatsmeow.sh` (con internet);
