@@ -62,24 +62,28 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - `work/nchat/.gotools` (caché Go de 255 MB, del 25/10) no lo crea `build.sh` y
   entra en el paquete de código fuente; revisar si se quita.
 
-## Último cierre (1 de noviembre de 2026)
+## Último cierre (2 de noviembre de 2026)
 
-- Rama `main`, sin ramas de trabajo abiertas. El único cambio de la sesión fue
-  agregar a `CLAUDE.md` el PC con CachyOS y el Core 2, y actualizar este archivo;
-  ninguno de los dos commits está subido a GitHub (lo hace el dueño).
-- Nada de código cambió: no falta compilar ni probar nada de esta sesión.
-  `build.sh` todavía no se ha ejecutado en sesión desde el PC con CachyOS.
-- Fame con la pantalla rota: solo se usa por ADB. El Core 2 SM-G355H llega la
-  primera semana de noviembre de 2026.
-- `CLAUDE.md` tiene dos contradicciones por resolver: la línea de Linux Mint junto
-  a la de CachyOS, y "Usa TermOne Plus" en el Fame junto a "se usa solo por ADB".
+- Rama `sms` (5 commits sobre `main`, sin unir ni subir). `main` tiene además
+  `c819f8c`: las dos contradicciones de `CLAUDE.md` quedaron resueltas (Fame solo
+  por ADB, sin Linux Mint).
+- Área 5, etapa 0 hecha en el Fame solo por ADB: `scripts/sms-test.sh` lee el
+  inbox cada 2 s, responde a un número con un menú ficticio (logo de 2 filas) y
+  envía con `cl.oldiechat.sms.SmsSend` (`player/`) como uid radio (1001); desde
+  root sin paquete Android rechaza el envío. Registro en
+  `/data/local/tmp/sms-test.log`.
+- Resultado (7 comandos: hola, 1, #, 2, 0, ?, 3): todos respondidos en un SMS
+  (29 a 71 caracteres). Detección 1-3 s, entrega a Android 0-2 s, total 2-3 s.
+  Falta el tiempo hasta que llega al teléfono del dueño (no se midió).
+- `player.jar` se compiló con `player/build.sh` y está en el Fame; nada queda sin
+  compilar. `build.sh` no se ejecutó.
 
 ## Qué sigue
 
-- Decidir las dos contradicciones de `CLAUDE.md`.
-- Área 5, etapa 0: prueba rápida de OldieChat SMS. Estaba prevista en el Fame;
-  revisar si se puede hacer solo por ADB o si espera al Core 2.
+- Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva.
+- Área 5, etapa 1 de OldieChat SMS (la indicará el dueño).
 - Después: logo grande al iniciar (Área 3, etapa 3).
+- Core 2 SM-G355H llega esta semana.
 
 ## Archivos
 
@@ -90,9 +94,9 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 | `nchat/vendor/` | dependencias Go de nchat (`scripts/vendor-go.sh`) |
 | `go/patches/` | parches propios al runtime de Go: el de musl (Go PR #69325) |
 | `engine/` | motor Go: `audio/oggopus`, `netcfg`, `tz`, `wa`, `cmd/` |
-| `player/` | Java por `app_process`: reproductor y `GlyphProbe` |
+| `player/` | Java por `app_process`: reproductor, `GlyphProbe` y `SmsSend` |
 | `phone/` | lo que va al teléfono: `oldiechat.sh`, `audio.sh`, `install.sh`, ícono, `config/`, `fonts/`, `licenses/` |
-| `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.sh`, `check-go-version.sh`, `update-whatsmeow.sh`, `vendor-go.sh` |
+| `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.sh`, `check-go-version.sh`, `update-whatsmeow.sh`, `vendor-go.sh`, `sms-test.sh` |
 | `tests/data/` | audio de prueba |
 | `docs/` | este archivo y la arquitectura de la app |
 | `work/`, `out/` | generados, fuera de git |
