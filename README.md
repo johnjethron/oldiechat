@@ -338,6 +338,7 @@ Parches aplicados a nchat (`nchat/patches/`):
 | 0010 | Adjuntos con etiqueta corta: `audio mm.ss`, `imagen`, `video`, `sticker`, `documento pdf`. |
 | 0011 | Anchos de carácter de la terminal (medidos en el teléfono) en lugar de los de la biblioteca C. |
 | 0012 | Versión de whatsmeow (fecha, `go.mod`, licencias); la genera `scripts/update-whatsmeow.sh`. |
+| 0013 | Un mensaje más alto que la pantalla se desplaza de a 2 líneas con Vol. arriba + W/S antes de pasar al siguiente. |
 
 Los parches al runtime de Go, si alguna vez hacen falta, van en `go/patches/`
 (ver [MAINTAINING.md](MAINTAINING.md)).
