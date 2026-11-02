@@ -45,7 +45,7 @@ while :; do
     case "$l" in Row:*) ;; *) continue ;; esac
     r=${l#*_id=}; last=${r%%,*}; r=${r#*d=}; got=${r%%,*}; set -- ${r#*body=}
     t=$(date +%s); reply "$1"
-    n=0; [ ${#text} -le 160 ] && CLASSPATH="$D/player.jar" app_process /system/bin cl.oldiechat.sms.SmsSend "$NUM" "$text" && n=1
+    n=0; [ ${#text} -le 160 ] && N="$NUM" T="$text" CLASSPATH="$D/player.jar" su 1001 -c 'app_process /system/bin cl.oldiechat.sms.SmsSend "$N" "$T"' && n=1
     e=$(date +%s)
     m="$(date '+%H:%M:%S') _id=$last cmd=$1 espera=$((t-got))s envio=$((e-t))s total=$((e-got))s chars=${#text} sms=$n"
     echo "$m"; echo "$m" >> "$LOG"
