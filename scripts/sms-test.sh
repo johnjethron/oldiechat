@@ -13,8 +13,8 @@ LOG="$D/sms-test.log"
 set -f
 TMPDIR=/data/local/tmp
 
-MENU=".-. OldieChat
-'-' SMS
+MENU=" o_o_o
+( ^_^ ) OldieChat
 1 Ana (2)
 2 Pedro
 3 Mama (1)
