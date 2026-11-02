@@ -73,6 +73,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   primera semana de noviembre de 2026.
 - `CLAUDE.md` tiene dos contradicciones por resolver: la línea de Linux Mint junto
   a la de CachyOS, y "Usa TermOne Plus" en el Fame junto a "se usa solo por ADB".
+- `CLAUDE.md` (2 de noviembre de 2026): agregada la sección "Dónde queda OldieChat" y el costo de OldieChat SMS, tal cual los dio el dueño; el README aún no muestra el costo real.
 
 ## Qué sigue
 

@@ -21,6 +21,13 @@ Principios del proyecto, en orden de importancia:
 4. Liviandad: teléfonos de 256 a 512 MB de RAM.
 5. Solo funciona mientras está abierto: sin segundo plano ni notificaciones. La puerta de enlace funciona mientras OldieChat está abierto en modo SMS. Al abrirlo, sincroniza lo pendiente.
 
+Dónde queda OldieChat:
+1. Android que WhatsApp dejó fuera: desde el 08-09-2026 WhatsApp exige Android 6.0. OldieChat corre en Android 4.x y 5.x, mientras llamen en las redes actuales.
+2. Android con WhatsApp, en versión mínima: sin segundo plano, sin notificaciones, sin estados ni canales, pensado para teclas y liviano.
+3. Dumbphones sin Android: solo OldieChat SMS llega a ellos.
+
+Costo de OldieChat SMS: lo decide cada usuario. OldieChat usa la menor cantidad de SMS posible, y el README muestra el costo real y la condición de los planes (SMS solo de persona a persona).
+
 Forma de trabajar:
 - Tengo TDA: avanza en pasos cortos y dime en una frase qué haces en cada uno.
 - Trabaja solo la etapa que te pido. Al terminarla, muéstrame el resultado y espera mi visto bueno antes de seguir.
