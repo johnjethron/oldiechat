@@ -72,9 +72,10 @@ rc=$?
 # que no siga sonando un audio al salir
 "$D/audio.sh" stop
 
-# audios descargados (Opus) y convertidos (WAV) se borran al salir: nchat los
-# vuelve a descargar si se abren. El rm de Android 4.1 no tiene -f.
-for f in "$HOME"/.config/nchat/profiles/*/tmp/*.og[ga] "$HOME"/.config/nchat/profiles/*/tmp/*.opus "$TMPDIR/audio/play.wav"; do
+# adjuntos descargados (audios, fotos, videos, documentos) y el audio convertido
+# se borran al salir: nchat los vuelve a descargar si se abren. El rm de Android
+# 4.1 no tiene -f.
+for f in "$HOME"/.config/nchat/profiles/*/tmp/* "$TMPDIR/audio/play.wav"; do
   [ ! -f "$f" ] || rm "$f"
 done
 exit $rc
