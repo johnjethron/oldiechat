@@ -62,9 +62,23 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - `work/nchat/.gotools` (caché Go de 255 MB, del 25/10) no lo crea `build.sh` y
   entra en el paquete de código fuente; revisar si se quita.
 
+## Último cierre (1 de noviembre de 2026)
+
+- Rama `main`, sin ramas de trabajo abiertas. El único cambio de la sesión fue
+  agregar a `CLAUDE.md` el PC con CachyOS y el Core 2, y actualizar este archivo;
+  ninguno de los dos commits está subido a GitHub (lo hace el dueño).
+- Nada de código cambió: no falta compilar ni probar nada de esta sesión.
+  `build.sh` todavía no se ha ejecutado en sesión desde el PC con CachyOS.
+- Fame con la pantalla rota: solo se usa por ADB. El Core 2 SM-G355H llega la
+  primera semana de noviembre de 2026.
+- `CLAUDE.md` tiene dos contradicciones por resolver: la línea de Linux Mint junto
+  a la de CachyOS, y "Usa TermOne Plus" en el Fame junto a "se usa solo por ADB".
+
 ## Qué sigue
 
-- Área 5, etapa 0: prueba rápida de OldieChat SMS en el Fame.
+- Decidir las dos contradicciones de `CLAUDE.md`.
+- Área 5, etapa 0: prueba rápida de OldieChat SMS. Estaba prevista en el Fame;
+  revisar si se puede hacer solo por ADB o si espera al Core 2.
 - Después: logo grande al iniciar (Área 3, etapa 3).
 
 ## Archivos
