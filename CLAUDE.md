@@ -9,10 +9,9 @@ Productos: OldieChat App (Android, app nativa; también hace de puerta de enlace
 Usuario: la persona que quiere dejar el smartphone y prueba un dumbphone, o que quiere usar un Android 4G guardado como teléfono simple. Un teléfono soportado tiene que llamar y enviar SMS en las redes actuales.
 
 Teléfonos de prueba (el Fame es el banco de pruebas donde se construye el motor):
-- Samsung Galaxy Fame GT-S6810L: Android 4.1.2, kernel 3.0.15, ARMv7 Cortex-A9, 512 MB de RAM, con root (SuperSU), conectado por USB con ADB. Usa TermOne Plus como terminal y el comando /system/bin/wsp para abrir OldieChat. Pantalla rota: se usa solo por ADB. Android 4.1 no trae cp ni chown -R.
+- Samsung Galaxy Fame GT-S6810L: Android 4.1.2, kernel 3.0.15, ARMv7 Cortex-A9, 512 MB de RAM, con root (SuperSU), conectado por USB con ADB. Pantalla rota y sin táctil: se usa solo por ADB, no por TermOne Plus, hasta que llegue el Galaxy Core 2. El comando /system/bin/wsp abre OldieChat. Android 4.1 no trae cp ni chown -R.
 - Samsung Galaxy Core 2 SM-G355H: Android 4.4.2, ARMv7, 768 MB de RAM, solo 3G. Llega la primera semana de noviembre de 2026.
 
-Equipo de compilación: Linux Mint (base Ubuntu 24.04) en un MacBook Air, x86_64, con Docker, qemu-user-static, ADB, gh y Claude Code.
 Equipo de compilación: PC de escritorio con CachyOS (shell fish). Proyecto en ~/Projects/OldieChat. Compilar con: time ./build.sh > build.log 2>&1. No borrar work/: guarda la caché de Go.
 
 Principios del proyecto, en orden de importancia:
