@@ -11,6 +11,7 @@ NUM="${1:?uso: sms-test.sh <número>}"
 D="${0%/*}"
 LOG="$D/sms-test.log"
 set -f
+TMPDIR=/data/local/tmp
 
 MENU=".-. OldieChat
 '-' SMS
