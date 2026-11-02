@@ -5,5 +5,5 @@ package android.telephony;
 
 public final class SmsManager {
     public static SmsManager getDefault() { throw new RuntimeException("stub"); }
-    public void sendTextMessage(String dest, String sc, String text, Object sent, Object delivery) { throw new RuntimeException("stub"); }
+    public void sendTextMessage(String dest, String sc, String text, android.app.PendingIntent sent, android.app.PendingIntent delivery) { throw new RuntimeException("stub"); }
 }
