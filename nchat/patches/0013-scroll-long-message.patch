@@ -2,7 +2,7 @@ diff --git a/src/uihistoryview.cpp b/src/uihistoryview.cpp
 index de9eed75..b7e23aee 100644
 --- a/src/uihistoryview.cpp
 +++ b/src/uihistoryview.cpp
-@@ -413,7 +413,17 @@ void UiHistoryView::Draw()
+@@ -413,7 +413,18 @@ void UiHistoryView::Draw()
      }
  
      const int maxMessageLines = (m_PaddedH - 1);
@@ -14,6 +14,7 @@ index de9eed75..b7e23aee 100644
 +      int& msgTopMax = m_Model->GetMsgTopMaxLocked();
 +      msgTopMax = std::max((int)wlines.size() - maxMessageLines, 0);
 +      msgTop = std::min(msgTop, msgTopMax);
++      if (msgTopMax > 0) redrawwin(m_PaddedWin); // TermOne Plus does not repaint the scroll
 +      if (msgTop < msgTopMax) reactionLines = 0;
 +      wlines = std::vector<std::wstring>(wlines.begin() + msgTop, wlines.end() - (msgTopMax - msgTop));
 +    }
