@@ -199,6 +199,10 @@ aparece en el teléfono con Volumen abajo + G.
   convierten y suenan en segundo plano después de 1 o 2 segundos, y se detienen
   al salir. Si uno no suena, el detalle de cada paso queda en
   `/data/local/tmp/oldiechat/home/audio.log`.
+- **Adjuntos**: al salir se borran todos los descargados (audios, fotos, videos
+  y documentos); si abres uno de nuevo, se descarga otra vez.
+- **Mensajes largos**: uno más alto que la pantalla, ya seleccionado, se
+  desplaza de a 2 líneas con Vol. arriba + W/S antes de pasar al siguiente.
 - **Archivados**: la barra de estado muestra `[Archivados]` mientras ves esa
   lista, que incluye todos tus chats archivados.
 - **Toques**: tocar un nombre de la lista abre esa conversación, y dos toques

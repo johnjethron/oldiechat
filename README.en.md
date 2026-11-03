@@ -197,6 +197,10 @@ phone with Volume down + G.
   downloaded, converted and played in the background after 1–2 seconds, and stop
   when you quit. If one does not play, every step is logged in
   `/data/local/tmp/oldiechat/home/audio.log`.
+- **Attachments**: quitting deletes every downloaded one (audio, photos, videos
+  and documents); opening one again downloads it again.
+- **Long messages**: a selected message taller than the screen scrolls 2 lines
+  at a time with Vol. up + W/S before moving to the next one.
 - **Archived**: the status bar shows `[Archivados]` while that list is shown; it
   includes all your archived chats.
 - **Taps**: tapping a name in the list opens that conversation, and two taps in a

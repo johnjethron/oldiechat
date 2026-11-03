@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.3
+
+- **Mensajes largos**: un mensaje más alto que la pantalla se desplaza de a 2
+  líneas con Vol. arriba + W/S antes de pasar al siguiente (parche 0013). El
+  parche redibuja el historial en cada desplazamiento porque TermOne Plus no
+  repintaba las filas movidas.
+- **Salir cierra la ventana de TermOne Plus** (`wsp`).
+- **Los adjuntos descargados se borran al salir** (audios, fotos, videos y
+  documentos, y el audio convertido); OldieChat los vuelve a descargar si se abren.
+
 ## 0.2.2
 
 - **Go 1.26.10** (antes 1.26.3), con las correcciones de seguridad de esa rama.
