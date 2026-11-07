@@ -1,0 +1,37 @@
+diff --git a/src/uicontroller.cpp b/src/uicontroller.cpp
+index 28fb8120..95030bf5 100644
+--- a/src/uicontroller.cpp
++++ b/src/uicontroller.cpp
+@@ -7,9 +7,12 @@
+ 
+ #include "uicontroller.h"
+ 
++#include <cstdlib>
+ #include <cwchar>
+ 
++#include <fcntl.h>
+ #include <unistd.h>
++#include <sys/ioctl.h>
+ #include <sys/select.h>
+ 
+ #include "uikeyinput.h"
+@@ -32,6 +35,19 @@ void UiController::Cleanup()
+ 
+ wint_t UiController::GetKey(int p_TimeOutMs)
+ {
++  // su (daemonsu) gives nchat its own pty and copies the size only at start: follow OLDIECHAT_TTY
++  static const char* outerTty = getenv("OLDIECHAT_TTY");
++  static int outerFd = outerTty ? open(outerTty, O_RDONLY | O_NOCTTY) : -1;
++  struct winsize outer, inner;
++  if ((outerFd != -1) && (ioctl(outerFd, TIOCGWINSZ, &outer) == 0) && (ioctl(STDIN_FILENO, TIOCGWINSZ, &inner) == 0) &&
++      ((outer.ws_row != inner.ws_row) || (outer.ws_col != inner.ws_col)))
++  {
++    ioctl(STDIN_FILENO, TIOCSWINSZ, &outer); // SIGWINCH: get_wch returns KEY_RESIZE
++    wint_t key = 0;
++    UiKeyInput::GetWch(&key);
++    return key;
++  }
++
+   fd_set fds;
+   FD_ZERO(&fds);
+   FD_SET(STDIN_FILENO, &fds);
