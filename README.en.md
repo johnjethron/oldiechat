@@ -206,14 +206,13 @@ phone with Volume down + G.
 - **Taps**: tapping a name in the list opens that conversation, and two taps in a
   row on the input area open or close the keyboard.
 
-## If you later use `adb shell` without root
+## If you lose the phone running OldieChat
 
-`wsp` runs OldieChat as root, so new files are owned by root. To use it from
-`adb shell` without root again:
-
-```
-su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
-```
+The `/data/local/tmp/oldiechat/home` folder holds your WhatsApp session keys and
+only root can read it (`root:root`, mode 700). Even so, if you lose the phone,
+unlink it from your main phone: in WhatsApp open **Settings > Linked devices**,
+tap the OldieChat device and choose **Log out**. From then on the lost phone's
+keys are useless.
 
 ## Known limitations
 

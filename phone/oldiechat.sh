@@ -31,6 +31,8 @@ esac
 for d in "$HOME" "$HOME/tmp" "$HOME/.config"; do
   [ -d "$d" ] || mkdir "$d" || exit 1
 done
+# las llaves de WhatsApp quedan solo para root
+chown 0:0 "$HOME" && chmod 700 "$HOME" || exit 1
 
 # consultas que no abren la interfaz: no cierran otra sesión ni detienen el audio
 case "$1" in

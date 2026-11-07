@@ -208,14 +208,13 @@ aparece en el teléfono con Volumen abajo + G.
 - **Toques**: tocar un nombre de la lista abre esa conversación, y dos toques
   seguidos en el área de escritura abren o cierran el teclado.
 
-## Si después usas `adb shell` sin root
+## Si pierdes el teléfono con OldieChat
 
-`wsp` ejecuta OldieChat como root, así que los archivos nuevos quedan a nombre de
-root. Para volver a usarlo desde `adb shell` sin root:
-
-```
-su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
-```
+La carpeta `/data/local/tmp/oldiechat/home` guarda las llaves de tu sesión de
+WhatsApp y solo root puede leerla (`root:root`, permisos 700). Aun así, si pierdes
+el teléfono, desvincúlalo desde el teléfono principal: en WhatsApp abre
+**Ajustes > Dispositivos vinculados**, toca el dispositivo de OldieChat y elige
+**Cerrar sesión**. Desde ese momento las llaves del teléfono perdido no sirven.
 
 ## Limitaciones conocidas
 

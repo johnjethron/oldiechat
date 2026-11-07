@@ -6,6 +6,7 @@
 #   - copia el programa a /data/local/tmp/oldiechat (nchat, conversor y
 #     reproductor de audio, terminfo, zonas horarias, scripts)
 #   - mueve la sesión de una instalación anterior en /data/local/tmp/nchat
+#   - deja home/ (las llaves de WhatsApp) solo para root: root:root, 700
 #   - copia key.conf, ui.conf, color.conf, glyphs.txt y guide.txt a la configuración (respalda los existentes)
 #   - crea /system/etc/resolv.conf
 #   - instala /system/etc/ssl/certs/ca-certificates.crt
@@ -124,7 +125,7 @@ install_program() {
   fi
 
   log "Instalando la configuración (key, ui, color, glyphs, guide)"
-  root "mkdir ${DEST}/home ${DEST}/home/.config ${CONFDIR} 2>/dev/null; chmod 700 ${DEST}/home"
+  root "mkdir ${DEST}/home ${DEST}/home/.config ${CONFDIR} 2>/dev/null; chown 0:0 ${DEST}/home; chmod 700 ${DEST}/home"
   for f in key.conf ui.conf color.conf glyphs.txt guide.txt; do
     [[ -f "${PKG}/config/${f}" ]] || continue
     root "if [ -f ${CONFDIR}/${f} ]; then cat ${CONFDIR}/${f} > ${CONFDIR}/${f}.bak; chmod 600 ${CONFDIR}/${f}.bak; fi; \
