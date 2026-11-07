@@ -32,7 +32,8 @@ case "${1:-}" in
     closed
     root "ls ${N}/profiles/WhatsAppMd_*" || die "no hay sesión de OldieChat en el teléfono"
     root "rm -r ${T} 2>/dev/null; mkdir ${T}; chown 2000:2000 ${T}; chmod 700 ${T}; ${F}; \
-      c ${N}/profiles ${T}/profiles 2000:2000; c ${N}/history ${T}/history 2000:2000" || die "no pude copiar la sesión"
+      c ${N}/profiles ${T}/profiles 2000:2000; c ${N}/history ${T}/history 2000:2000; \
+      cat ${N}/version > ${T}/version && chown 2000:2000 ${T}/version" || die "no pude copiar la sesión"
     adb pull "${T}" "${tmp}/session" || die "no pude traer la sesión al PC"
     out="${HOME}/Respaldos/oldiechat/oldiechat-sesion-$(date +%Y%m%d-%H%M).tar.gz"
     mkdir -p "${out%/*}" && chmod 700 "${out%/*}"
@@ -44,10 +45,11 @@ case "${1:-}" in
     closed
     root "[ -f ${H%/home}/oldiechat.sh ]" || die "OldieChat no está instalado: ejecuta antes ./install.sh"
     ! root "ls ${N}/profiles/WhatsAppMd_*" || die "el teléfono ya tiene una sesión de OldieChat"
-    tar -C "${tmp}" -xzf "$2" && [[ -d "${tmp}/session/profiles" ]] || die "$2 no es un respaldo de OldieChat"
+    tar -C "${tmp}" -xzf "$2" && [[ -f "${tmp}/session/version" ]] || die "$2 no es un respaldo de OldieChat"
     adb shell "rm -r ${T} 2>/dev/null; mkdir ${T}; chmod 700 ${T}" >/dev/null
-    for d in profiles history; do adb push "${tmp}/session/${d}" "${T}/${d}" || die "no pude copiar la sesión al teléfono"; done
-    root "${F}; c ${T}/profiles ${N}/profiles 0:0; c ${T}/history ${N}/history 0:0; chown 0:0 ${H}; chmod 700 ${H}" \
+    for d in profiles history version; do adb push "${tmp}/session/${d}" "${T}/${d}" || die "no pude copiar la sesión al teléfono"; done
+    root "${F}; c ${T}/profiles ${N}/profiles 0:0; c ${T}/history ${N}/history 0:0; \
+      cat ${T}/version > ${N}/version && chmod 600 ${N}/version; chown 0:0 ${H}; chmod 700 ${H}" \
       || die "no pude restaurar la sesión"
     echo "Sesión restaurada. En TermOne Plus escribe: wsp"
     ;;
