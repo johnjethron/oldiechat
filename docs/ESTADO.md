@@ -82,6 +82,24 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - `work/nchat/.gotools` (caché Go de 255 MB, del 25/10) no lo crea `build.sh` y
   entra en el paquete de código fuente; revisar si se quita.
 
+## Área 3, etapa 1: seguridad de la sesión (rama `usuarios`, sin unir a `main`)
+
+- Commit `3470d64` (sobre `main`, 0.2.3). `home/` queda `root:root` con permisos
+  700: `install.sh` aplica `chown 0:0` y `chmod 700`, y `oldiechat.sh` lo repite al
+  arrancar. Los README (español e inglés) explican cómo desvincular el dispositivo
+  desde el teléfono principal si se pierde el teléfono, y ya no tienen la sección
+  "adb shell sin root".
+- Probado el 7 de noviembre de 2026 en el Fame, solo con `oldiechat.sh` y `home`
+  (copiados a mano): `ls -ld` da `root root drwx------`, el shell sin `su` recibe
+  "Permission denied" y OldieChat abre autenticado, sin QR (registro de nchat).
+  No se entró a Saved Messages.
+- **Falta**: probar `install.sh` completo con esta versión (se hará en el Core 2,
+  etapa 2), compilar un paquete nuevo si se quiere publicar (no cambió el binario,
+  solo scripts y README) y decidir cuándo se une `usuarios` a `main`.
+- El Core 2 (serie 4203ce4abc349100, rooteado) no se tocó; OldieChat se instala ahí
+  en la etapa 2. Con los dos conectados se usa `ANDROID_SERIAL` (Fame
+  4d009ce074228000).
+
 ## Otras ramas
 
 - `CLAUDE.md`: las dos contradicciones quedaron resueltas en `main` (`c819f8c`: Fame
@@ -95,10 +113,11 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Qué sigue
 
-- Publicar la 0.2.3 (comandos del dueño).
+- Publicar la 0.2.3 (comandos del dueño). Esa publicación no incluye `usuarios`.
 - Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva;
   Área 5, etapa 1 la indica el dueño.
-- Área 3 sigue con la etapa 1. La etapa 3 (logo grande al iniciar) pasó a la app.
+- Área 3: la etapa 1 está hecha en la rama `usuarios`; sigue la etapa 2 (instalar
+  en el Core 2). La etapa 3 (logo grande al iniciar) pasó a la app.
 - El Core 2 SM-G355H llega la primera semana de noviembre de 2026.
 
 ## Archivos
