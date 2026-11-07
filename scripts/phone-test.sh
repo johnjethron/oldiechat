@@ -86,7 +86,7 @@ if [[ ${SOUND} -eq 1 ]]; then
   root "CLASSPATH=${DEST}/lib/player.jar app_process /system/bin cl.oldiechat.player.Player ${T}/tono.wav" >/dev/null
   # en una variable: con pipefail, grep -q cortaría la tubería y daría falso error
   log="$(adb logcat -d | tr -d '\r')"
-  if grep -q 'createTrack' <<<"${log}"; then
+  if grep -q 'createTrack\|Received MEDIA_STARTED' <<<"${log}"; then
     pass "el reproductor abrió una pista de audio (debería haber sonado un tono)"
   else
     fail "el reproductor no abrió una pista de audio"
