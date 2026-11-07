@@ -14,7 +14,12 @@ Java que reutiliza el motor (`engine/`); su arquitectura está propuesta en
 Teléfono de pruebas: Samsung Galaxy Fame GT-S6810L, Android 4.1.2, kernel 3.0.15,
 Cortex-A9, root con SuperSU, conectado por ADB. Terminal en TermOne Plus con el
 teclado abierto: 53 columnas y 15 filas (`echo $COLUMNS $LINES`); la guía con el
-logo ocupa 13 filas (10 líneas, borde y margen). Repositorio:
+logo ocupa 13 filas (10 líneas, borde y margen). Desde el 7 de noviembre de 2026
+el Fame (serie 4d009ce074228000) está sin sesión y se usa solo por ADB para SMS;
+OldieChat vinculado está en el Samsung Galaxy Core 2 SM-G355H (serie
+4203ce4abc349100, Android 4.4.2, kernel 3.10, SELinux Enforcing, root con
+SuperSU, TermOne Plus 5.7.0/X). Con los dos conectados se usa `ANDROID_SERIAL`.
+Repositorio:
 github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Qué está hecho (versión en `VERSION`)
@@ -91,12 +96,40 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   (copiados a mano): `ls -ld` da `root root drwx------`, el shell sin `su` recibe
   "Permission denied" y OldieChat abre autenticado, sin QR (registro de nchat).
   No se entró a Saved Messages.
-- **Falta**: probar `install.sh` completo con esta versión (se hará en el Core 2,
-  etapa 2), compilar un paquete nuevo si se quiere publicar (no cambió el binario,
-  solo scripts y README) y decidir cuándo se une `usuarios` a `main`.
-- El Core 2 (serie 4203ce4abc349100, rooteado) no se tocó; OldieChat se instala ahí
-  en la etapa 2. Con los dos conectados se usa `ANDROID_SERIAL` (Fame
-  4d009ce074228000).
+- `install.sh` completo se probó en el Core 2 en la etapa 2.
+
+## Área 3, etapa 2: actualizar y respaldar (rama `usuarios`, sin unir a `main`)
+
+- Commits `f19cd38`, `047b5f3`, `c5f69d7` y `3ff81dd`. `VERSION` es `0.2.4-dev`;
+  paquete compilado el 7 de noviembre de 2026 (4 min 6 s, sin errores) en
+  `out/oldiechat-terminal-0.2.4-dev-armv7.tar.gz`. No hay nada sin compilar.
+- `install.sh` actualiza conservando sesión y configuración (la anterior queda
+  como `.bak`) y avisa "Versión anterior: X. Instalada: Y." (lee la línea
+  `OldieChat X (c)` de `/system/bin/wsp`) o "Instalación nueva".
+- `session.sh respaldar | restaurar <archivo>` (en el paquete, se usa desde el
+  PC): copia `profiles/`, `history/` y `.config/nchat/version` (sin él nchat no
+  abre) con `cat` y `chown`/`chmod` uno por uno; se detiene si OldieChat está
+  abierto (`ps`) o si el destino ya tiene sesión. Copia temporal en
+  `/data/local/tmp/oldiechat-session` (700), respaldo en `~/Respaldos/oldiechat/`
+  (600). README (español e inglés): sección "Actualizar, respaldar y restaurar".
+- Revisado en whatsmeow: un respaldo sigue autenticando, pero cuando la otra copia
+  se usó, las sesiones Signal y los prekeys avanzan y se pierden mensajes; dos
+  copias conectadas se desconectan entre sí (`StreamReplaced`, que nchat solo
+  registra en TRACE). Por eso: respaldar justo antes de mudarse y borrar después.
+- Samsung con kernel 3.10 (Core 2, `CONFIG_SEC_RESTRICT_FORK`): un programa root en
+  `/data` no puede ejecutar otros ("Restricted making process" en el kernel), y
+  nchat no lanzaba `audio.sh`. `oldiechat.sh` monta `$D` en `/dev/oldiechat` y
+  corre nchat desde ahí (si el montaje falla, desde `$D`). Probado también el
+  montaje en el Fame. `phone-test.sh` acepta `MEDIA_STARTED` (4.4 no registra
+  `createTrack`).
+- Probado el 7 de noviembre de 2026: 0.2.3 instalada en el Core 2 (primera vez en
+  4.4, SELinux Enforcing), sesión del Fame respaldada y restaurada, actualización a
+  0.2.4-dev encima; autenticó sin QR. `phone-test.sh --sound` dio "Todo pasó" y el
+  dueño probó a mano en TermOne Plus 5.7.0/X (copiado del Fame): mensajes,
+  archivados, salir, acceso directo, nota de voz y guía.
+- La copia del Fame (`home/`) y los respaldos del PC se borraron. El Fame no se
+  vuelve a vincular por ahora: se usa solo por ADB para SMS.
+- `usuarios` se une a `main` al publicar la 0.2.4.
 
 ## Hallazgos del Core 2 (7 de noviembre de 2026, sin arreglar)
 
@@ -105,6 +138,8 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   anterior y quedan restos de texto.
 - Los emoji salen a color. `glyphs.txt` es del Fame; revisar si uno generado
   para el Core 2 con `scripts/glyphs.sh` arregla también los anchos.
+- `audio.log` anota la hora en UTC: `date` de Android no entiende la ruta de
+  archivo que `oldiechat.sh` pone en `TZ`.
 
 ## Otras ramas
 
@@ -121,9 +156,9 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 - Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva;
   Área 5, etapa 1 la indica el dueño.
-- Área 3: la etapa 1 está hecha en la rama `usuarios`; sigue la etapa 2 (instalar
-  en el Core 2). La etapa 3 (logo grande al iniciar) pasó a la app.
-- El Core 2 SM-G355H llega la primera semana de noviembre de 2026.
+- Área 3: etapas 1 y 2 hechas en la rama `usuarios`; se une a `main` al publicar la
+  0.2.4. La etapa 3 (logo grande al iniciar) pasó a la app.
+- Hallazgos del Core 2 (arriba), sin arreglar.
 
 ## Archivos
 
