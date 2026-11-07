@@ -70,6 +70,7 @@ check() {
   n="$(adb devices | awk 'NR>1 && $2=="device"' | wc -l)"
   [[ -n "${ANDROID_SERIAL:-}" || "${n}" -eq 1 ]] || die "hay ${n} teléfonos conectados; usa ANDROID_SERIAL=..."
   root "id" | grep -q 'uid=0' || die "su no da root (acepta el permiso de SuperSU en el teléfono y repite)"
+  [[ "$(adb shell ps)" != *oldiechat/bin/nchat* ]] || die "OldieChat está abierto en el teléfono: ciérralo y repite"
   phone "cat /proc/cpuinfo" | grep -qi 'ARMv7' || echo "Aviso: el teléfono no informa un procesador ARMv7"
   CA="$(find_ca_bundle)"
   # versión anterior: la línea "OldieChat X (c)" de /system/bin/wsp
