@@ -62,10 +62,9 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - `work/nchat/.gotools` (caché Go de 255 MB, del 25/10) no lo crea `build.sh` y
   entra en el paquete de código fuente; revisar si se quita.
 
-## Versión 0.2.3 (lista para publicar)
+## Versión 0.2.3 (publicada en GitHub el 7 de noviembre de 2026)
 
-- Rama `main` (la rama `usuarios` quedó unida), etiqueta local `v0.2.3`. Nada está
-  subido a GitHub: lo publica el dueño.
+- Rama `main`, etiqueta `v0.2.3` en `90471cd`.
 - Tres arreglos: mensajes largos de a 2 líneas con W/S (parche 0013, con
   `redrawwin` porque TermOne Plus no repintaba las filas movidas), salir cierra la
   ventana de TermOne Plus (`wsp`) y los adjuntos descargados se borran al salir.
@@ -74,7 +73,6 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - Instalada en el Fame el 7 de noviembre de 2026 y `scripts/phone-test.sh --sound`
   dio "Todo pasó" (el tono sonó). Antes se probó a mano con una compilación de la
   misma fuente: los 3 arreglos funcionan con el teclado abierto y cerrado.
-- **Falta**: pasar `MAINTAINING.md` y subir a GitHub (lo hace el dueño).
 - Fame: bloqueo de pantalla desactivado con root (`lockscreen.disabled=1` en
   `/data/system/locksettings.db`; respaldos `locksettings.db*.orig` en
   `/data/system`). Para pruebas por ADB: `svc power stayon usb`, y volver a
@@ -113,7 +111,6 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Qué sigue
 
-- Publicar la 0.2.3 (comandos del dueño). Esa publicación no incluye `usuarios`.
 - Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva;
   Área 5, etapa 1 la indica el dueño.
 - Área 3: la etapa 1 está hecha en la rama `usuarios`; sigue la etapa 2 (instalar
