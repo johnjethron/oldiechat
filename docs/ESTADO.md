@@ -62,36 +62,44 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - `work/nchat/.gotools` (caché Go de 255 MB, del 25/10) no lo crea `build.sh` y
   entra en el paquete de código fuente; revisar si se quita.
 
-## Versión 0.2.3 (cerrada, sin publicar)
+## Versión 0.2.3 (lista para publicar)
 
-- Rama `usuarios`, commits `2fab9f2` (parche 0013 con `redrawwin`) y `cb390bb`
-  (`VERSION`, `CHANGELOG.md`, README en español e inglés). Sin unir con `main` y
-  sin etiqueta `v0.2.3`. Nada está subido a GitHub.
-- Tres arreglos: mensajes largos de a 2 líneas con W/S (0013; el redibujo
-  corrige que TermOne Plus no repintaba las filas movidas), salir cierra la
+- Rama `main` (la rama `usuarios` quedó unida), etiqueta local `v0.2.3`. Nada está
+  subido a GitHub: lo publica el dueño.
+- Tres arreglos: mensajes largos de a 2 líneas con W/S (parche 0013, con
+  `redrawwin` porque TermOne Plus no repintaba las filas movidas), salir cierra la
   ventana de TermOne Plus (`wsp`) y los adjuntos descargados se borran al salir.
 - Compilada el 2 de noviembre de 2026 (4 min 8 s, `build.log` sin errores):
   `out/oldiechat-terminal-0.2.3-armv7.tar.gz` y `-source.tar.gz`.
-- Probado a mano en el Fame con la compilación anterior a `VERSION` 0.2.3 (mismo
-  código): `phone-test.sh` dio "Todo pasó" (sin `--sound`); los 3 arreglos
-  funcionan en Saved Messages, con el teclado abierto y cerrado.
-- **Falta**: instalar el paquete 0.2.3 (en el Fame hay una compilación anterior
-  con la misma fuente), correr `scripts/phone-test.sh --sound` (necesita al dueño
-  en el teléfono), unir `usuarios` con `main`, crear la etiqueta `v0.2.3`, pasar
-  `MAINTAINING.md` y subir a GitHub (lo hace el dueño).
+- Instalada en el Fame el 7 de noviembre de 2026 y `scripts/phone-test.sh --sound`
+  dio "Todo pasó" (el tono sonó). Antes se probó a mano con una compilación de la
+  misma fuente: los 3 arreglos funcionan con el teclado abierto y cerrado.
+- **Falta**: pasar `MAINTAINING.md` y subir a GitHub (lo hace el dueño).
 - Fame: bloqueo de pantalla desactivado con root (`lockscreen.disabled=1` en
   `/data/system/locksettings.db`; respaldos `locksettings.db*.orig` en
   `/data/system`). Para pruebas por ADB: `svc power stayon usb`, y volver a
-  `svc power stayon false` al terminar. OldieChat quedó abierto en Saved Messages.
+  `svc power stayon false` al terminar.
 - `work/nchat/.gotools` (caché Go de 255 MB, del 25/10) no lo crea `build.sh` y
   entra en el paquete de código fuente; revisar si se quita.
 
+## Otras ramas
+
+- `CLAUDE.md`: las dos contradicciones quedaron resueltas en `main` (`c819f8c`: Fame
+  solo por ADB, sin Linux Mint).
+- Rama `sms` (5 commits sobre `ce9dd21`, **sin unir a `main`**): Área 5, etapa 0
+  hecha en el Fame solo por ADB. `scripts/sms-test.sh` lee el inbox cada 2 s,
+  responde con un menú ficticio y envía con `cl.oldiechat.sms.SmsSend` (`player/`)
+  como uid radio. 7 comandos respondidos en un SMS cada uno; total 2-3 s hasta
+  que Android lo entrega. No se midió la llegada al teléfono del dueño.
+  Su `docs/ESTADO.md` tiene el detalle.
+
 ## Qué sigue
 
-- Cerrar la 0.2.3: ver "Falta" arriba.
-- Lo de `CLAUDE.md` (contradicciones) y el Área 5, etapa 0 están en las ramas
-  `main` y `sms`.
-- Después: logo grande al iniciar (Área 3, etapa 3).
+- Publicar la 0.2.3 (comandos del dueño).
+- Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva;
+  Área 5, etapa 1 la indica el dueño.
+- Área 3 sigue con la etapa 1. La etapa 3 (logo grande al iniciar) pasó a la app.
+- El Core 2 SM-G355H llega la primera semana de noviembre de 2026.
 
 ## Archivos
 
