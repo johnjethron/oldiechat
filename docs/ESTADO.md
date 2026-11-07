@@ -98,6 +98,14 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   en la etapa 2. Con los dos conectados se usa `ANDROID_SERIAL` (Fame
   4d009ce074228000).
 
+## Hallazgos del Core 2 (7 de noviembre de 2026, sin arreglar)
+
+- El formato se desarma cuando cambia el tamaño de la pantalla (al abrir o
+  cerrar el teclado): la guía y los bordes quedan dibujados con el tamaño
+  anterior y quedan restos de texto.
+- Los emoji salen a color. `glyphs.txt` es del Fame; revisar si uno generado
+  para el Core 2 con `scripts/glyphs.sh` arregla también los anchos.
+
 ## Otras ramas
 
 - `CLAUDE.md`: las dos contradicciones quedaron resueltas en `main` (`c819f8c`: Fame

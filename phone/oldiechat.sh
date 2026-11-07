@@ -33,6 +33,10 @@ for d in "$HOME" "$HOME/tmp" "$HOME/.config"; do
 done
 # las llaves de WhatsApp quedan solo para root
 chown 0:0 "$HOME" && chmod 700 "$HOME" || exit 1
+# Samsung con kernel 3.10 (CONFIG_SEC_RESTRICT_FORK) no deja que un programa root
+# en /data lance otros (audio.sh): nchat corre desde un montaje de $D en /dev
+B=/dev/oldiechat
+[ -x "$B/bin/nchat" ] || { mkdir "$B" 2>/dev/null; mount -o bind "$D" "$B"; } || B="$D"
 
 # consultas que no abren la interfaz: no cierran otra sesión ni detienen el audio
 case "$1" in
@@ -48,7 +52,7 @@ running_pid() {
   ps | while read -r line; do
     set -- $line
     eval "name=\${$#}"
-    [ "$name" = "$D/bin/nchat" ] && echo "$2"
+    [ "$name" = "$B/bin/nchat" ] && echo "$2"
   done
 }
 old="$(running_pid)"
@@ -68,7 +72,7 @@ for i in 4 3 2 1; do
   [ ! -f "$L.$i" ] || mv "$L.$i" "$L.$((i + 1))"
 done
 
-"$D/bin/nchat" -d "$HOME/.config/nchat" "$@"
+"$B/bin/nchat" -d "$HOME/.config/nchat" "$@"
 rc=$?
 
 # que no siga sonando un audio al salir
