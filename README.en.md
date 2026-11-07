@@ -214,6 +214,35 @@ unlink it from your main phone: in WhatsApp open **Settings > Linked devices**,
 tap the OldieChat device and choose **Log out**. From then on the lost phone's
 keys are useless.
 
+## Update, back up and restore
+
+To update, run `./install.sh` from the new version: it keeps the session and the
+settings, and tells you which version was there and which one is installed now.
+
+To move the session to another phone without linking again, with OldieChat
+closed and from the package folder:
+
+```bash
+./session.sh respaldar
+```
+
+The backup is saved in `~/Respaldos/oldiechat/` (mode 600). Keep it somewhere
+safe: it can read and write your WhatsApp. On the new phone, after `./install.sh`:
+
+```bash
+./session.sh restaurar ~/Respaldos/oldiechat/oldiechat-sesion-<date>.tar.gz
+```
+
+With several phones connected, pick each one with `ANDROID_SERIAL=<serial>`.
+
+A copied session is the same linked device, not a new one:
+
+- Back up right before moving and restore right away. Once the new phone opens
+  OldieChat, the backup and the old phone's copy fall behind and lose messages:
+  do not open OldieChat on the old phone again, delete its copy
+  (`adb shell su -c "rm -r /data/local/tmp/oldiechat/home"`) and delete the backup.
+- Logging out OldieChat from your main phone also logs out the new copy.
+
 ## Known limitations
 
 - **Emoji** are shown in black and white (Noto Emoji). Those the font lacks, or

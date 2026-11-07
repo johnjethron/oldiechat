@@ -216,6 +216,37 @@ el teléfono, desvincúlalo desde el teléfono principal: en WhatsApp abre
 **Ajustes > Dispositivos vinculados**, toca el dispositivo de OldieChat y elige
 **Cerrar sesión**. Desde ese momento las llaves del teléfono perdido no sirven.
 
+## Actualizar, respaldar y restaurar
+
+Para actualizar, ejecuta `./install.sh` de la versión nueva: conserva la sesión y
+la configuración, y dice qué versión había y cuál quedó.
+
+Para pasar la sesión a otro teléfono sin volver a vincular, con OldieChat cerrado
+y desde la carpeta del paquete:
+
+```bash
+./session.sh respaldar
+```
+
+El respaldo queda en `~/Respaldos/oldiechat/` (permisos 600). Guárdalo en un lugar
+seguro: con él se lee y se escribe en tu WhatsApp. En el teléfono nuevo, después
+de `./install.sh`:
+
+```bash
+./session.sh restaurar ~/Respaldos/oldiechat/oldiechat-sesion-<fecha>.tar.gz
+```
+
+Con varios teléfonos conectados, elige cada uno con `ANDROID_SERIAL=<serie>`.
+
+Una sesión copiada es el mismo dispositivo vinculado, no uno nuevo:
+
+- Respalda justo antes de mudarte y restaura enseguida. Cuando el teléfono nuevo
+  abra OldieChat, el respaldo y la copia del teléfono anterior quedan atrasados y
+  pierden mensajes: no vuelvas a abrir OldieChat en el anterior, borra su copia
+  (`adb shell su -c "rm -r /data/local/tmp/oldiechat/home"`) y borra el respaldo.
+- Cerrar la sesión de OldieChat desde el teléfono principal cierra también la
+  copia nueva.
+
 ## Limitaciones conocidas
 
 - **Emoji**: se ven en blanco y negro (Noto Emoji). Los que la fuente no tiene, o

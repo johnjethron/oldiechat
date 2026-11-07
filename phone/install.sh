@@ -72,6 +72,9 @@ check() {
   root "id" | grep -q 'uid=0' || die "su no da root (acepta el permiso de SuperSU en el teléfono y repite)"
   phone "cat /proc/cpuinfo" | grep -qi 'ARMv7' || echo "Aviso: el teléfono no informa un procesador ARMv7"
   CA="$(find_ca_bundle)"
+  # versión anterior: la línea "OldieChat X (c)" de /system/bin/wsp
+  PREV="$(phone "cat /system/bin/wsp" | sed -n 's/.*OldieChat \([^ ]*\) (c).*/\1/p')" || true
+  [[ -n "${PREV}" ]] || ! root "[ -d ${DEST}/home ] || [ -d ${OLD_DEST}/home ]" >/dev/null || PREV="desconocida"
   echo "Paquete: ${PKG}"
   echo "Certificados: ${CA}"
 }
@@ -193,10 +196,16 @@ finish() {
   phone "rm -r ${STAGE}" >/dev/null || true
   root "${DEST}/oldiechat.sh --version" | grep -m1 '^nchat' || die "OldieChat no arrancó en el teléfono"
   root "${DEST}/bin/oldiechat-audio 2>&1; true" | grep -q 'uso:' || die "oldiechat-audio no arrancó en el teléfono"
+  if [[ -n "${PREV}" ]]; then
+    echo "Versión anterior: ${PREV}. Instalada: $(cat "${PKG}/VERSION")."
+  else
+    echo "Instalación nueva: $(cat "${PKG}/VERSION")."
+  fi
   cat <<EOF
 
 Listo. En TermOne Plus escribe:  wsp
-Si es la primera vez, vincula WhatsApp desde el equipo:
+Si es la primera vez, restaura un respaldo con ./session.sh restaurar <archivo>
+o vincula WhatsApp desde el equipo:
   adb shell
   su -c "TERM=screen-256color ${DEST}/oldiechat.sh --setup"
 EOF

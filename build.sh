@@ -138,7 +138,7 @@ compile() {
     cp -r /usr/share/zoneinfo "$O/zoneinfo"
     rm -rf "$O/zoneinfo/posix" "$O/zoneinfo/right"
 
-    cp /phone/oldiechat.sh /phone/audio.sh /phone/install.sh /phone/oldiechat.png "$O/"
+    cp /phone/oldiechat.sh /phone/audio.sh /phone/install.sh /phone/session.sh /phone/oldiechat.png "$O/"
     cp /phone/config/* "$O/config/"
     mkdir -p "$O/fonts"; cp /phone/fonts/* "$O/fonts/"
 
@@ -153,7 +153,7 @@ compile() {
     cp /phone/licenses/* "$O/licenses/"
 
     chmod -R u=rwX,go=rX "$O"
-    chmod 755 "$O/oldiechat.sh" "$O/audio.sh" "$O/install.sh" "$O/bin/nchat" "$O/bin/oldiechat-audio"
+    chmod 755 "$O/oldiechat.sh" "$O/audio.sh" "$O/install.sh" "$O/session.sh" "$O/bin/nchat" "$O/bin/oldiechat-audio"
   '
 }
 
