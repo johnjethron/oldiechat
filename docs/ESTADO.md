@@ -218,7 +218,22 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   que Android lo entrega. No se midió la llegada al teléfono del dueño.
   Su `docs/ESTADO.md` tiene el detalle.
 
+## Cierre del 7 de noviembre de 2026 (noche)
+
+- Rama de trabajo: `motor` (`main` + `4e5922b` y este cierre). `main` tiene 5
+  commits locales sin subir (incluye `0a169e1` y `f292803`); `sms` sin cambios.
+- Compilado el 7/11 a las 22:16 desde `motor` (4 min 16 s, sin errores): `out/`
+  tiene el motor nuevo y el paquete de la terminal 0.2.4-dev rearmado (sin cambios
+  de nchat).
+- Fame: motor en `/data/local/tmp/oldiechat-engine/` con la sesión vinculada a la
+  cuenta del dueño ("Otro dispositivo" en el iPhone), detenido. Si no se abre en
+  30 días se desvincula. Core 2 sin tocar.
+- Nada sin probar de lo hecho. Lo siguiente se compila y se prueba en el Fame.
+
 ## Qué sigue
+
+- Área 1, etapa 7, puntos 3, 4, 5 y 6 en `engine/` (ver la sección de la etapa 7),
+  con el visto bueno del dueño antes de empezar.
 
 - Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva;
   Área 5, etapa 1 la indica el dueño.
