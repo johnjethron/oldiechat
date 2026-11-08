@@ -247,6 +247,10 @@ Una sesión copiada es el mismo dispositivo vinculado, no uno nuevo:
 - Cerrar la sesión de OldieChat desde el teléfono principal cierra también la
   copia nueva.
 
+## Plazos de WhatsApp
+
+WhatsApp desvincula los dispositivos sin uso. Recomiendo que abras OldieChat al menos cada 30 días y WhatsApp en tu teléfono principal cada 14 :) DGTL MINIMAL es el camino.
+
 ## Limitaciones conocidas
 
 - **Emoji**: se ven en blanco y negro (Noto Emoji). Los que la fuente no tiene, o

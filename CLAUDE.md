@@ -37,8 +37,10 @@ Forma de trabajar:
 - Tengo TDA: avanza en pasos cortos y dime en una frase qué haces en cada uno.
 - Trabaja solo la etapa que te pido. Al terminarla, muéstrame el resultado y espera mi visto bueno antes de seguir.
 - Responde en español. Nunca expliques con ejemplos ni metáforas.
+- En trabajo estructural (motor, arquitectura, ramas, vinculación, cómo se comunican las piezas), explícame en 3 a 5 frases simples qué haces, por qué, qué cambia y qué riesgo hay. Define en una frase cada término técnico. Sin ejemplos ni metáforas.
 - Código minimal: antes de agregar código, revisa si se resuelve quitando algo o con configuración. Cada cambio debe ser lo más pequeño posible y los parches a nchat, cortos y separados. Al terminar cada paso, dime cuántas líneas agregaste y cuántas quitaste.
 - Si te pido una idea nueva o un cambio de dirección, pregúntame si es necesario y si encaja con el minimalismo antes de hacerlo.
+- Textos para personas: el README, el CHANGELOG, los textos de la app y los de los SMS los escribe el usuario. Claude entrega los datos y, solo si se lo piden, revisa ortografía y largo (160 caracteres por SMS). Los documentos técnicos (docs/ESTADO.md, MAINTAINING.md) los sigue escribiendo Claude.
 - No inyectes teclas por ADB en mis conversaciones reales sin avisarme antes.
 - Haz commit al terminar cada paso. No subas nada a GitHub; eso lo hago yo.
 - Si algo parece no tener solución, dímelo directo antes de seguir intentando.
@@ -58,3 +60,4 @@ Ahorro de uso:
 - Las opciones nuevas de nchat van apagadas por defecto en el parche y se encienden en `phone/config/`.
 - Antes de borrar algo grande o cambiar la estructura, muestra un inventario y espera aprobación.
 - Al cerrar una versión: `VERSION`, `CHANGELOG.md`, README (español e inglés), `docs/ESTADO.md` y `scripts/phone-test.sh --sound` en el teléfono.
+- La app y el motor vinculan solo con el código de 8 caracteres, sin QR. Si WhatsApp quita el código, el QR se recupera del commit f2b76b2. La terminal sigue con el QR de nchat.

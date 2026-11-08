@@ -8,9 +8,16 @@
 //	    Mantiene la sesión y habla por stdin/stdout con líneas JSON (una por
 //	    línea). Comandos que recibe:
 //	        {"cmd":"pair","phone":"56912345678"}   -> {"type":"pair_code","text":"ABCD-EFGH"}
+//	        {"cmd":"logout"}                        -> {"type":"logged_out"} y termina
+//	        {"cmd":"chats","kind":"people"}         -> {"type":"chats","chats":[{chat,name,time,unread}]} (o "groups")
+//	        {"cmd":"messages","chat":"<jid>"}       -> {"type":"messages","chat":"<jid>","messages":[...]} (nuevos desde la consulta anterior)
 //	        {"cmd":"send","chat":"<jid>","text":"hola"} -> {"type":"sent","id":"..."}
 //	        {"cmd":"quit"}
 //	    Eventos que envía: ver engine/wa (connected, message, audio_ready, ...).
+//
+// Con --glyphs <archivo> los textos y nombres usan los reemplazos de glyphs.txt
+// (pantalla); con --glyphs sms quedan en GSM de 7 bits sin emoji, y un mensaje
+// que queda vacío no se emite.
 //
 // Opciones comunes: --certs <pem> (certificados raíz), --dns 1.1.1.1:53,8.8.8.8:53,
 // --tz America/Santiago, --log-level (en stderr: ERROR, WARN, INFO, DEBUG).
@@ -32,6 +39,7 @@ import (
 
 	waLog "go.mau.fi/whatsmeow/util/log"
 
+	"oldiechat/engine/glyphs"
 	"oldiechat/engine/netcfg"
 	"oldiechat/engine/tz"
 	"oldiechat/engine/wa"
@@ -44,6 +52,7 @@ type options struct {
 	certs    string
 	dns      string
 	tz       string
+	glyphs   string
 	logLevel string
 }
 
@@ -58,6 +67,7 @@ func main() {
 	fs.StringVar(&o.certs, "certs", "", "archivo PEM con certificados raíz")
 	fs.StringVar(&o.dns, "dns", "", "servidores DNS ip:puerto separados por coma")
 	fs.StringVar(&o.tz, "tz", "", "zona horaria, p. ej. America/Santiago")
+	fs.StringVar(&o.glyphs, "glyphs", "", "glyphs.txt del teléfono, o sms")
 	fs.StringVar(&o.logLevel, "log-level", "WARN", "nivel de registro en stderr")
 	_ = fs.Parse(os.Args[2:])
 
@@ -146,16 +156,31 @@ func selftest(o options) int {
 
 // run mantiene la sesión y traduce entre líneas JSON y el motor.
 func run(o options) error {
+	filter := func(s string) string { return s }
+	switch o.glyphs {
+	case "":
+	case "sms":
+		filter = glyphs.SMS
+	default:
+		t, err := glyphs.Load(o.glyphs)
+		if err != nil {
+			return err
+		}
+		filter = t.Screen
+	}
 	var outMu sync.Mutex
 	out := json.NewEncoder(os.Stdout)
-	emit := func(v any) {
+	emit := func(v wa.Event) {
+		if !clean(&v, filter) {
+			return
+		}
 		outMu.Lock()
 		defer outMu.Unlock()
 		_ = out.Encode(v)
 	}
 
 	ctx := context.Background()
-	eng, err := wa.Open(ctx, o.data, newStderrLog("engine", o.logLevel), func(e wa.Event) { emit(e) })
+	eng, err := wa.Open(ctx, o.data, newStderrLog("engine", o.logLevel), emit)
 	if err != nil {
 		return err
 	}
@@ -175,6 +200,7 @@ func run(o options) error {
 			Phone string `json:"phone"`
 			Chat  string `json:"chat"`
 			Text  string `json:"text"`
+			Kind  string `json:"kind"`
 		}
 		if err := json.Unmarshal(in.Bytes(), &c); err != nil {
 			emit(wa.Event{Type: "error", Error: "json: " + err.Error()})
@@ -190,6 +216,25 @@ func run(o options) error {
 			} else {
 				emit(wa.Event{Type: "pair_code", Text: code})
 			}
+		case "logout":
+			if err := eng.Logout(ctx); err != nil {
+				emit(wa.Event{Type: "error", Error: err.Error()})
+				continue
+			}
+			emit(wa.Event{Type: "logged_out"})
+			return nil
+		case "chats":
+			if list, err := eng.Chats(ctx, c.Kind); err != nil {
+				emit(wa.Event{Type: "error", Error: err.Error()})
+			} else {
+				emit(wa.Event{Type: "chats", Chats: list})
+			}
+		case "messages":
+			if list, err := eng.Messages(ctx, c.Chat); err != nil {
+				emit(wa.Event{Type: "error", Chat: c.Chat, Error: err.Error()})
+			} else {
+				emit(wa.Event{Type: "messages", Chat: c.Chat, Messages: list})
+			}
 		case "send":
 			id, err := eng.SendText(ctx, c.Chat, c.Text)
 			if err != nil {
@@ -204,6 +249,28 @@ func run(o options) error {
 		}
 	}
 	return in.Err()
+}
+
+// clean aplica el filtro de glifos a textos y nombres. Devuelve false si un
+// mensaje con texto queda vacío (en SMS, uno que solo traía emoji).
+func clean(ev *wa.Event, filter func(string) string) bool {
+	ev.Name = filter(ev.Name)
+	if ev.Type == "message" && ev.Text != "" {
+		if ev.Text = filter(ev.Text); ev.Text == "" {
+			return false
+		}
+	}
+	for i := range ev.Chats {
+		ev.Chats[i].Name = filter(ev.Chats[i].Name)
+	}
+	kept := ev.Messages[:0]
+	for _, m := range ev.Messages {
+		if clean(&m, filter) {
+			kept = append(kept, m)
+		}
+	}
+	ev.Messages = kept
+	return true
 }
 
 // stderrLog envía el registro de whatsmeow a stderr para no mezclarlo con el
