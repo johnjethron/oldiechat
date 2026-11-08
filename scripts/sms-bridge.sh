@@ -72,7 +72,7 @@ ask() {  # envía la orden $1 y deja en R la respuesta de tipo $2 (o el error)
 }
 
 val() {  # valor de texto del campo $1 en $2, sin escapes, en v
-  v=${2#*"\"$1\":\""}; [ "$v" = "$2" ] && { v=; return; }; v=${v%%\"*}
+  k="\"$1\":\""; v=${2#*"$k"}; [ "$v" = "$2" ] && { v=; return; }; v=${v%%\"*}
   v=${v//${A}n/ }; v=${v//${A}t/ }; v=${v//${A}r/}
   v=${v//${A}u0026/&}; v=${v//${A}u003c/<}; v=${v//${A}u003e/>}
   v=${v//$A/}; v=${v//$B/\"}; v=${v//$C/$bs}
