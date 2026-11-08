@@ -156,6 +156,8 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Estado al cierre del 7 de noviembre de 2026
 
+- Último cierre del día: rama actual `sms` (Área 5, etapa 1 hecha). Nada subido a
+  GitHub. Lo que sigue en `main` queda como se describe abajo.
 - Rama actual: `main`. `origin/main` está en `1378832` (la unión de `usuarios`,
   subida por el dueño); `CLAUDE.md` y este cierre quedan solo en local.
   `VERSION` es `0.2.4-dev`.
@@ -188,12 +190,19 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   (29 a 71 caracteres); detección 1-3 s, total 2-3 s hasta que Android lo entrega.
   No se midió la llegada al teléfono del dueño. `player.jar` está en el Fame.
 - Etapa 1, diseño aprobado: `docs/SMS_BRIDGE.md`, con los cambios y respuestas del
-  dueño. Sin código.
+  dueño. Sin código. Commits `dae8454` (diseño), `6e0da82` (unión de `main`) y
+  `511a925` (cambios del dueño).
+- `CLAUDE.md` en `sms` tiene la regla del costo actualizada (`4ac518a`): dos líneas
+  con SMS, 500 al mes cada una en uso normal y 1.000 en intenso, condiciones de las
+  cuatro compañías sin recomendar ninguna. **`main` todavía tiene la regla vieja**:
+  falta decidir si se copia esa línea a `main`.
+- Nada que compilar ni probar: la etapa 1 es solo diseño.
 
 ## Qué sigue
 
 - Área 5: la siguiente etapa la indica el dueño. El Fame se vincula como
-  dispositivo nuevo en el Área 1, etapa 7.
+  dispositivo nuevo en el Área 1, etapa 7. Decidir si la regla del costo de
+  `CLAUDE.md` se copia a `main`.
 - Área 3: etapas 1, 2 y 10 hechas y unidas a `main`. La etapa 3 (logo grande al
   iniciar) pasó a la app.
 - Pendientes de la terminal 0.2.4 (arriba): emoji y `glyphs.txt`, `phone-test.sh`
