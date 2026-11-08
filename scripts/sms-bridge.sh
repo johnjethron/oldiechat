@@ -140,11 +140,11 @@ open() {  # mensajes nuevos de la persona $1 en 1 SMS, los más recientes
 }
 
 send() {  # escribe $3 a $1 (nombre $2); silencio si sale bien
-  lastc=$1 lastw=$2; c=$1; [ -n "$SELF" ] && c=$ME
+  lastc=$1 lastw=$2; c=$1 to=$2; [ -n "$SELF" ] && c=$ME to="Saved Messages"
   x=${3//\\/$bs$bs}; x=${x//\"/$bs\"}; x=${x//$nl/${bs}n}
   ask "{\"cmd\":\"send\",\"chat\":\"$c\",\"text\":\"$x\"}" sent
   case $R in
-    '{"type":"sent"'*) okw=$2; log "WhatsApp enviado a $2" ;;
+    '{"type":"sent"'*) okw=$2; log "WhatsApp enviado a $to" ;;
     *) okw=; log "WhatsApp falló: $R"; pre; say "$p$T_NOENV $2" ;;
   esac
 }
