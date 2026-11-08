@@ -8,7 +8,7 @@ Android con OldieChat App abierto en modo SMS y una línea propia.
 
 ## 1. Referencia (solo para aprender)
 
-Revisado de memoria sobre su código público, no en esta etapa.
+Revisado de memoria sobre su código público, no en esta etapa. Se revisa en el Área 4, etapa 6.
 
 | Proyecto | Recibe | Envía | Lo que no tomamos |
 | --- | --- | --- | --- |
@@ -42,16 +42,22 @@ externo. OldieChat no tiene servidor: el motor habla con WhatsApp y la app con l
 
 ### Sin root (OldieChat App, paquete propio)
 
-- Permisos: `SEND_SMS`, `RECEIVE_SMS`, `READ_SMS`, `READ_PHONE_STATE`, `INTERNET`.
-  En Android 6 o más nuevo se aceptan una vez al abrir.
+- Permisos del manifiesto: `RECEIVE_SMS`, `READ_SMS`, `SEND_SMS`, `READ_CALL_LOG`
+  (más `INTERNET`, que no se pide al usuario). En Android 6 o más nuevo se aceptan
+  una vez al abrir.
 - Recibir: receptor de `SMS_RECEIVED` registrado por la pantalla al abrir el modo
   SMS y quitado al cerrarlo. No va en el manifiesto: con la app cerrada no despierta nada.
 - Al abrir: lee el inbox desde el último `_id` atendido (guardado) para sincronizar lo pendiente.
 - Enviar: `SmsManager` en partes, con aviso de enviado.
-- Llamada perdida: escucha del estado del teléfono mientras está abierta: si suena
-  el número del dueño, envía el menú.
-- Desde Android 4.4 una app que no es la de SMS predeterminada no puede borrar SMS:
-  los mensajes quedan en la app de mensajes de la puerta de enlace (ver 14).
+- Llamada perdida: mientras está abierta, observa el registro de llamadas; una
+  perdida del número del dueño envía el menú.
+- Los SMS de comandos se acumulan. Desde Android 4.4 solo la app de SMS
+  predeterminada puede borrar SMS, y Android guarda solo en enviados lo que manda
+  otra app. OldieChat no se hace app predeterminada (reemplazaría la app de
+  mensajes y sumaría código). Resultado: comandos y respuestas quedan en un solo
+  hilo de la app de mensajes de la puerta de enlace, unos 800 SMS al mes en uso
+  normal (menos de 1 MB). Se borra ese hilo a mano una vez al mes. En 4.1-4.3 y
+  con root se podría borrar solo, pero se usa la misma regla en todos.
 
 ## 3. Seguridad
 
@@ -60,6 +66,7 @@ externo. OldieChat no tiene servidor: el motor habla con WhatsApp y la app con l
 - Todo SMS o llamada de otro número se ignora en silencio: no se responde ni se registra el contenido.
 - Las respuestas van siempre al número configurado, no al remitente: quien falsifique
   el número del dueño no recibe nada. Solo podría enviar mensajes de WhatsApp a su nombre.
+- Sin PIN (decisión del dueño): el riesgo queda escrito en el README (sección 15).
 - Límite: 30 SMS por hora. Al llegar, la puerta de enlace calla hasta la hora siguiente.
 
 ## 4. Qué se envía
@@ -70,9 +77,9 @@ externo. OldieChat no tiene servidor: el motor habla con WhatsApp y la app con l
 
 ## 5. Grupos
 
-- `#`: los 9 grupos más recientes, numerados, en 1 SMS.
-- `#n`: los últimos 3 mensajes del grupo n en 1 SMS (cada uno recortado para caber).
-- `#n texto`: escribe al grupo n.
+- `g`: los 9 grupos más recientes, numerados, en 1 SMS.
+- `gn`: los últimos 3 mensajes del grupo n en 1 SMS (cada uno recortado para caber).
+- `gn texto`: escribe al grupo n.
 - Nada de un grupo se envía sin pedirlo, ni en modo conversación.
 
 ## 6. Un solo hilo
@@ -85,11 +92,13 @@ externo. OldieChat no tiene servidor: el motor habla con WhatsApp y la app con l
 - Modo conversación: empieza al abrir o escribir a una persona. Se reenvía solo lo
   nuevo de esa persona, juntando 20 s. Termina con 10 minutos sin SMS del dueño,
   con otro menú o al abrir otra persona.
-- Ambigüedad: un texto que empieza con número y espacio va a esa persona (pregunta 3).
+- Si el texto empieza con número, el dueño escribe antes el número de la persona
+  (`n texto`). Lo mismo para un texto que sea solo `0`, `00`, `a` o `g`.
 
 ## 7. Mínimo cobro
 
-Comandos (solo dígitos, `#` y `?`):
+Comandos (sin `#` ni `?`, que en muchos básicos cambian el modo o están en la
+tabla de símbolos). Las letras valen en mayúscula o minúscula:
 
 | Envía el dueño | Recibe | SMS dueño | SMS puerta |
 | --- | --- | --- | --- |
@@ -97,8 +106,8 @@ Comandos (solo dígitos, `#` y `?`):
 | `00` | menú con mensajes: solo personas con no leídos, con su último mensaje recortado | 1 | 1 a 2 |
 | `n` | mensajes sin leer de n (o los 3 últimos), 1 SMS | 1 | 1 |
 | `n texto` / `texto` | nada si sale bien | 1 | 0 |
-| `#`, `#n`, `#n texto` | sección 5 | 1 | 1 o 0 |
-| `?` | ayuda en 1 SMS | 1 | 1 |
+| `g`, `gn`, `gn texto` | sección 5 | 1 | 1 o 0 |
+| `a` | ayuda con el logo, en 1 SMS | 1 | 1 |
 
 Reglas:
 - Empaquetar: varios mensajes en un SMS, uno por línea.
@@ -119,7 +128,8 @@ Estimación mensual (30 días):
 | Normal | 2 revisiones (menú, abre 2, responde 2), 1 conversación de 10 min (5 y 5), grupos día por medio | 420 | 390 |
 | Intenso | el doble del normal | 840 | 780 |
 
-Con 500 SMS por línea alcanza el uso normal; el intenso no. Usar `00` en vez de
+Son dos líneas con SMS: la del teléfono cliente (columna dueño) y la de la puerta
+de enlace. Uso normal: 500 SMS en cada una. Uso intenso: 1.000 en cada una. Usar `00` en vez de
 abrir chats uno por uno baja una revisión de 4+3 a 3+2 SMS. La puerta de enlace
 cuenta lo enviado en el mes y agrega `Quedan N SMS` en la respuesta pedida cuando quedan 50.
 
@@ -131,7 +141,7 @@ cuenta lo enviado en el mes y agrega `Quedan N SMS` en la respuesta pedida cuand
 | Cada paso cuesta | Llamada perdida gratis, silencio si sale bien, empaquetar, `00`. |
 | Todo llega del mismo número | Nombre al inicio de cada mensaje; el README pide guardar el número como "WhatsApp". |
 | Esperas sin saber | Todo error se responde; la llamada suena si la puerta de enlace tiene señal; si no llega el menú en 1 minuto, está cerrada o sin red (README). |
-| Hay que recordar comandos | 4 formas: número, texto, `#` y `?`; la última línea del menú las recuerda; `?` cabe en 1 SMS y se puede guardar como plantilla. |
+| Hay que recordar comandos | 4 formas: número, texto, `g` y `a`; la última línea del menú las recuerda; `a` cabe en 1 SMS y se puede guardar como plantilla. |
 
 ## 9. Cuenta principal
 
@@ -167,7 +177,7 @@ Una línea, solo cuando el dueño pidió algo:
 | Sin wifi o sin internet | `Sin internet desde HH:MM`. Lo que escribió queda pendiente y se envía al volver (solo mientras está abierta). |
 | Sesión cerrada por WhatsApp | `Sesion cerrada. Vincula de nuevo.` Deja de atender hasta vincular. |
 | WhatsApp rechazó un envío | `No se envio a Nombre` |
-| Comando no entendido o sin destinatario | `? ayuda  0 menu` |
+| Comando no entendido o sin destinatario | `a ayuda  0 menu` |
 | Sin red de SMS en la puerta de enlace | Nada: no puede responder. Reintenta una vez al minuto y lo muestra en su pantalla. |
 | Puerta de enlace cerrada o apagada | Nada. La llamada no suena si está apagada. |
 
@@ -196,7 +206,8 @@ Una línea, solo cuando el dueño pidió algo:
 - Unas 18 a 20 columnas y 5 a 7 líneas: un SMS completo ocupa más de una pantalla.
 - Lo importante primero: nombre al inicio, un mensaje por línea.
 - Líneas del menú cortas: `n Nombre (k)`.
-- El logo de 2 filas cuesta 26 caracteres y una pantalla casi entera (pregunta 5).
+- El logo de 2 filas (26 caracteres) va solo en la bienvenida y en la ayuda (`a`).
+  Bienvenida: la respuesta al primer pedido después de configurar el número del dueño.
 
 ## 14. Teléfono cliente
 
@@ -206,27 +217,34 @@ Una línea, solo cuando el dueño pidió algo:
 - Escribir en modo reducido o sin tildes, si el teléfono lo permite: con una tilde
   el SMS del dueño baja a 70 caracteres.
 - Algunos básicos muy antiguos no unen SMS en partes: por eso los menús caben en 1 SMS.
-- En la puerta de enlace los SMS se acumulan en su app de mensajes; se borran a mano
-  (con root, el prototipo puede borrarlos con `content delete`).
+- En la puerta de enlace los SMS se acumulan en su app de mensajes (sección 2).
 
 ## 15. Textos para el README
 
-**Costo.** OldieChat SMS necesita una segunda línea, en un Android con OldieChat App
-abierto (la puerta de enlace). Referencia: Movistar Plan voz Libre, $8.990 al mes con
-500 SMS y sin datos (noviembre de 2026). En prepago sin bolsa, cada SMS cuesta de $50 a
-$70. Tener las dos líneas en la misma compañía no baja el costo. Cada SMS que envías se
-cobra en tu línea; cada respuesta, en la línea de la puerta de enlace.
+**Costo.** OldieChat SMS usa dos líneas con SMS: la de tu teléfono y la de la puerta
+de enlace, un Android con OldieChat App abierto. Referencia: Movistar Plan voz Libre,
+$8.990 al mes con 500 SMS y sin datos (noviembre de 2026). En prepago sin bolsa, cada
+SMS cuesta de $50 a $70. Tener las dos líneas en la misma compañía no baja el costo.
+Cada SMS que envías se cobra en tu línea; cada respuesta, en la línea de la puerta de
+enlace.
 
 **Cuota.** Revisar dos veces al día y conversar un rato usa unos 400 SMS al mes en cada
-línea: 500 alcanzan para un uso normal. La llamada perdida para pedir el menú es
-gratis. La puerta de enlace avisa cuando quedan 50.
+línea: 500 alcanzan para un uso normal; un uso intenso necesita 1.000 en cada una. La
+llamada perdida para pedir el menú es gratis. La puerta de enlace avisa cuando quedan 50.
+
+**Puerta de enlace.** Queda en casa, enchufada y con la pantalla encendida: solo
+funciona mientras OldieChat está abierto en modo SMS.
+
+**Riesgo.** La puerta de enlace solo atiende a tu número y siempre responde a tu
+número. Quien falsifique tu número no puede leer tus chats, pero sí podría enviar
+mensajes de WhatsApp a tu nombre.
 
 **Condición de los planes.** Movistar y Claro dicen por escrito que los SMS del plan son
 de persona a persona, de terminal a terminal, y prohíben enviarlos con software o
 aplicaciones. Entel y WOM piden uso personal habitual. La puerta de enlace es un
 teléfono que responde a un solo número y a bajo volumen, pero envía con una
 aplicación. Revisa las condiciones de tu plan: el riesgo de que la compañía corte la
-línea es tuyo.
+línea es tuyo. OldieChat no recomienda compañía.
 
 **Regla de los 14 días.** WhatsApp pide abrir la cuenta en el teléfono principal al
 menos cada 14 días; si no, cierra la sesión de los dispositivos vinculados, también la
@@ -250,15 +268,12 @@ de un chat, enviar mensaje. Además el motor informa sesión cerrada y, para el 
 - Que `su 1001` y `content` funcionen con SELinux Enforcing en el Core 2.
 - El consumo de memoria de la puerta de enlace.
 
-## Preguntas para el dueño
+## Decisiones del dueño (7 de noviembre de 2026)
 
-1. ¿Vinculo el Fame como segundo dispositivo (código por ADB, lo escribes en el
-   iPhone) para que sea la puerta de enlace de prueba?
-2. ¿Basta el número del dueño o agregamos un PIN contra números falsificados?
-3. ¿Un texto que empieza con número y espacio va siempre a esa persona, o usamos un
-   prefijo para escribir a la última persona?
-4. En muchos básicos `#` cambia el modo de escritura y `?` está en la tabla de
-   símbolos. ¿Dejamos `#` y `?` o pasamos todo a dígitos?
-5. ¿El logo de 2 filas va en cada menú, solo en `?` o en ninguno?
-6. ¿Recomendamos en el README la línea de la puerta de enlace en Entel o WOM, por su condición más amplia?
-7. En el caso (b), ¿OldieChat puede abrir WhatsApp solo cada 13 días, o lo abre el dueño con la tecla?
+1. El Fame se vincula como dispositivo nuevo en el Área 1, etapa 7; no antes.
+2. Sin PIN; el riesgo va en el README.
+3. Sin prefijo: si el texto empieza con número, se escribe antes el número de la persona.
+4. Grupos con `g`, `gn` y `gn texto`; ayuda con `a`. Sin `#` ni `?`.
+5. Logo solo en la bienvenida y la ayuda.
+6. No se recomienda compañía: el README muestra las condiciones de las cuatro.
+7. Caso (b): WhatsApp lo abre el dueño con la tecla de OldieChat.
