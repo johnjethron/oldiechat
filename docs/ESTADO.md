@@ -47,7 +47,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   nchat usa los anchos de la terminal y reemplaza lo que no se dibuja bien.
 - Motor reutilizable `engine/` (whatsmeow, audio, DNS y certificados sin root,
   zona horaria, protocolo JSON por stdin/stdout); compila y `selftest` pasa en el
-  teléfono, **nunca se conectó al servidor**.
+  teléfono; se conectó por primera vez el 7 de noviembre de 2026 (Área 1, etapa 7).
 
 ## Versión 0.2.2 (publicada en GitHub)
 
@@ -177,6 +177,35 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   archivo que `oldiechat.sh` pone en `TZ`.
 - Al publicar: `VERSION` 0.2.4, `CHANGELOG.md`, recompilar, `install.sh` y
   `phone-test.sh --sound` en el Core 2, y prueba a mano.
+
+## Área 1, etapa 7: conectar el motor a WhatsApp (rama `motor`)
+
+- Rama `motor` creada desde `main` el 7 de noviembre de 2026, sin subir. Antes,
+  en `main`: la regla del costo de `sms` copiada con cherry-pick (`0a169e1`) y la
+  regla de explicar el trabajo estructural en `CLAUDE.md` (`f292803`).
+- `engine/wa`: `store.DeviceProps.Os = "OldieChat"` (`4e5922b`). En el iPhone el
+  Fame igual aparece como "Otro dispositivo" con ícono "?"; queda así por ahora.
+- Punto 1 completo en el Fame, sin su, en `/data/local/tmp/oldiechat-engine/`
+  (permisos 700, sesión en `data/`): vincula con código de 8 caracteres como
+  dispositivo nuevo (el Core 2 sigue vinculado con la terminal), retoma sin
+  código al reiniciar, envía, recibe, distingue el principal (remitente con
+  Device 0) y no envía confirmaciones de lectura (solo el recibo de entrega).
+  Se envió solo a Saved Messages (chat con uno mismo).
+- El primer "hola" después de vincular no llegó (sin evento y 0 pendientes al
+  reiniciar); causa sin confirmar. Vigilarlo en las próximas pruebas.
+- Para el punto 3: los chats llegan con LID (`...@lid`); el número viene aparte
+  (`peer_recipient_pn`) y hay que convertirlo. Los mensajes que no son texto ni
+  audio no se descartan: se emiten con una etiqueta corta como en la terminal
+  ("imagen 45 KB", "video", "documento pdf", "sticker").
+- Pendiente, aprobado por el dueño: puntos 3 (órdenes de chats y mensajes, tope
+  de 50 mensajes por chat en la tabla propia y historial inicial mínimo), 4
+  (Device en el evento), 5 (`pair_qr`, `logout`) y 6 (la terminal sigue con su
+  propia vinculación; app y puerta de enlace comparten el motor). Emojis en
+  `engine/glyphs` con dos modos: pantalla con `glyphs.txt` del teléfono; SMS
+  quita todos los emoji sin reemplazo, un mensaje solo de emojis no se reenvía y
+  cada SMS queda en GSM de 7 bits (160 caracteres). Texto del README aprobado:
+  mensajes pendientes 30 días, principal cada 14 días.
+- Nada sin compilar: `out/engine/oldiechat-engine-armv7` del 7/11 está en el Fame.
 
 ## Otras ramas
 
