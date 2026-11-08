@@ -98,12 +98,13 @@ load() {  # los 9 chats más recientes de tipo $1 en $2C1.. (chat), $2W1.. (nomb
   ask "{\"cmd\":\"chats\",\"kind\":\"$1\"}" chats
   J=${R#*'"chats":['}; i=0
   while [ $i -lt 9 ]; do
-    i=$((i + 1)); ch= v= u=0
+    ch= v= u=0
     case $J in *'"chat":"'*)
       val chat "$J"; ch=$v; val name "$J"; [ -n "$v" ] || v=${ch%@*}
-      J=${J#*'"unread":'}; u=${J%%[!0-9]*} ;;
+      J=${J#*'"unread":'}; u=${J%%[!0-9]*}
+      case ${J%%\}*} in *'"archived":true'*) continue ;; esac ;;   # archivados: no van al menú
     esac
-    eval "$2C$i=\$ch $2W$i=\$v $2U$i=\$u"
+    i=$((i + 1)); eval "$2C$i=\$ch $2W$i=\$v $2U$i=\$u"
   done
 }
 

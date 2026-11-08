@@ -9,7 +9,7 @@
 //	    línea). Comandos que recibe:
 //	        {"cmd":"pair","phone":"56912345678"}   -> {"type":"pair_code","text":"ABCD-EFGH"}
 //	        {"cmd":"logout"}                        -> {"type":"logged_out"} y termina
-//	        {"cmd":"chats","kind":"people"}         -> {"type":"chats","chats":[{chat,name,time,unread}]} (o "groups")
+//	        {"cmd":"chats","kind":"people"}         -> {"type":"chats","chats":[{chat,name,time,unread,archived}]} (o "groups")
 //	        {"cmd":"messages","chat":"<jid>"}       -> {"type":"messages","chat":"<jid>","messages":[...]} (nuevos desde la consulta anterior)
 //	        {"cmd":"send","chat":"<jid>","text":"hola"} -> {"type":"sent","id":"..."}
 //	        {"cmd":"quit"}

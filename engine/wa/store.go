@@ -31,10 +31,11 @@ CREATE TABLE IF NOT EXISTS oc_chat (
 
 // Chat es una fila de la lista de chats.
 type Chat struct {
-	Chat   string `json:"chat"`
-	Name   string `json:"name"`
-	Time   int64  `json:"time"`
-	Unread int    `json:"unread"`
+	Chat     string `json:"chat"`
+	Name     string `json:"name"`
+	Time     int64  `json:"time"`
+	Unread   int    `json:"unread"`
+	Archived bool   `json:"archived,omitempty"` // archivado en el principal
 }
 
 // save guarda un mensaje y deja solo los keepPerChat más nuevos de su chat.
@@ -52,7 +53,8 @@ func (e *Engine) save(ev Event, unread bool) {
 }
 
 // Chats devuelve los chats de personas (kind "people") o de grupos ("groups"),
-// del más reciente al más antiguo, con los mensajes recibidos sin consultar.
+// del más reciente al más antiguo, con los mensajes recibidos sin consultar y si
+// están archivados.
 func (e *Engine) Chats(ctx context.Context, kind string) ([]Chat, error) {
 	if kind != "people" && kind != "groups" {
 		return nil, errors.New("wa: kind debe ser people o groups")
@@ -78,6 +80,9 @@ func (e *Engine) Chats(ctx context.Context, kind string) ([]Chat, error) {
 	rows.Close()
 	for i := range list {
 		jid, _ := types.ParseJID(list[i].Chat)
+		if cs, err := e.cli.Store.ChatSettings.GetChatSettings(ctx, jid); err == nil {
+			list[i].Archived = cs.Archived
+		}
 		if jid.Server != types.GroupServer {
 			list[i].Name = e.personName(ctx, jid)
 		} else if list[i].Name == "" {
