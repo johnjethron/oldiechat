@@ -210,6 +210,11 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   mensajes de grupo guardados). Modo pantalla de `engine/glyphs`: los emoji sin
   línea R (👍🏽) y el selector de variante que queda tras un reemplazo (`<3` + U+FE0F)
   pasan tal cual; se decide en la app, según su fuente.
+- Sin probar: `pair_qr`, cambio de nombre de grupo y etiquetas `ubicacion` y
+  `contacto`.
+- Pendiente para el Área 1, etapa 5: la opción de días del historial reciente
+  (`RecentSyncDaysLimit`), si la sincronización usa mucha memoria. Hoy el
+  historial inicial trae unas 3 semanas, con tope de 50 mensajes por chat.
 
 ## Otras ramas
 
