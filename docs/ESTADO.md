@@ -206,6 +206,10 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   cada SMS queda en GSM de 7 bits (160 caracteres). Texto del README aprobado:
   mensajes pendientes 30 días, principal cada 14 días.
 - Nada sin compilar: `out/engine/oldiechat-engine-armv7` del 7/11 está en el Fame.
+- Pendientes anotados (sin código): grupos sin probar en `chats` (no había
+  mensajes de grupo guardados). Modo pantalla de `engine/glyphs`: los emoji sin
+  línea R (👍🏽) y el selector de variante que queda tras un reemplazo (`<3` + U+FE0F)
+  pasan tal cual; se decide en la app, según su fuente.
 
 ## Otras ramas
 
