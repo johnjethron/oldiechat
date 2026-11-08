@@ -68,6 +68,7 @@ func Open(ctx context.Context, dataDir string, log waLog.Logger, emit func(Event
 	hs := store.DeviceProps.HistorySyncConfig        // historial inicial mínimo
 	hs.FullSyncDaysLimit, hs.FullSyncSizeMbLimit = proto.Uint32(1), proto.Uint32(1)
 	hs.InitialSyncMaxMessagesPerChat = proto.Uint32(keepPerChat)
+	_ = os.RemoveAll(filepath.Join(dataDir, "media")) // audios de una sesión anterior que no cerró
 	if err := os.MkdirAll(filepath.Join(dataDir, "media"), 0o700); err != nil {
 		return nil, err
 	}
