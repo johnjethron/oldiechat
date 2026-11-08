@@ -10,6 +10,8 @@
 //	        {"cmd":"pair","phone":"56912345678"}   -> {"type":"pair_code","text":"ABCD-EFGH"}
 //	        {"cmd":"pair_qr"}                       -> {"type":"qr","text":"<código QR>"} (cada código nuevo)
 //	        {"cmd":"logout"}                        -> {"type":"logged_out"} y termina
+//	        {"cmd":"chats","kind":"people"}         -> {"type":"chats","chats":[{chat,name,time,unread}]} (o "groups")
+//	        {"cmd":"messages","chat":"<jid>"}       -> {"type":"messages","chat":"<jid>","messages":[...]} (nuevos desde la consulta anterior)
 //	        {"cmd":"send","chat":"<jid>","text":"hola"} -> {"type":"sent","id":"..."}
 //	        {"cmd":"quit"}
 //	    Eventos que envía: ver engine/wa (connected, message, audio_ready, ...).
@@ -177,6 +179,7 @@ func run(o options) error {
 			Phone string `json:"phone"`
 			Chat  string `json:"chat"`
 			Text  string `json:"text"`
+			Kind  string `json:"kind"`
 		}
 		if err := json.Unmarshal(in.Bytes(), &c); err != nil {
 			emit(wa.Event{Type: "error", Error: "json: " + err.Error()})
@@ -203,6 +206,18 @@ func run(o options) error {
 			}
 			emit(wa.Event{Type: "logged_out"})
 			return nil
+		case "chats":
+			if list, err := eng.Chats(ctx, c.Kind); err != nil {
+				emit(wa.Event{Type: "error", Error: err.Error()})
+			} else {
+				emit(wa.Event{Type: "chats", Chats: list})
+			}
+		case "messages":
+			if list, err := eng.Messages(ctx, c.Chat); err != nil {
+				emit(wa.Event{Type: "error", Chat: c.Chat, Error: err.Error()})
+			} else {
+				emit(wa.Event{Type: "messages", Chat: c.Chat, Messages: list})
+			}
 		case "send":
 			id, err := eng.SendText(ctx, c.Chat, c.Text)
 			if err != nil {

@@ -7,10 +7,13 @@ package wa
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -29,24 +32,27 @@ import (
 // Event es lo que el motor informa a la interfaz. Solo se llenan los campos que
 // corresponden a cada tipo.
 type Event struct {
-	Type    string `json:"type"`              // connected, disconnected, logged_out, paired, qr, message, audio_ready, error
-	Chat    string `json:"chat,omitempty"`    // JID del chat
-	Sender  string `json:"sender,omitempty"`  // JID de quien envía
-	Name    string `json:"name,omitempty"`    // nombre visible de quien envía
-	ID      string `json:"id,omitempty"`      // ID del mensaje
-	Time    int64  `json:"time,omitempty"`    // segundos desde 1970
-	FromMe  bool   `json:"from_me,omitempty"` // enviado desde esta cuenta
-	Device  *uint16 `json:"device,omitempty"` // dispositivo que envía (0 = principal)
-	Text    string `json:"text,omitempty"`    // texto del mensaje
-	Audio   bool   `json:"audio,omitempty"`   // es una nota de voz o audio
-	Seconds uint32 `json:"seconds,omitempty"` // duración del audio
-	Path    string `json:"path,omitempty"`    // WAV listo para reproducir (audio_ready)
-	Error   string `json:"error,omitempty"`
+	Type     string  `json:"type"`              // connected, disconnected, logged_out, paired, qr, message, audio_ready, error
+	Chat     string  `json:"chat,omitempty"`    // JID del chat
+	Sender   string  `json:"sender,omitempty"`  // JID de quien envía
+	Name     string  `json:"name,omitempty"`    // nombre visible de quien envía
+	ID       string  `json:"id,omitempty"`      // ID del mensaje
+	Time     int64   `json:"time,omitempty"`    // segundos desde 1970
+	FromMe   bool    `json:"from_me,omitempty"` // enviado desde esta cuenta
+	Device   *uint16 `json:"device,omitempty"`  // dispositivo que envía (0 = principal)
+	Text     string  `json:"text,omitempty"`    // texto del mensaje
+	Audio    bool    `json:"audio,omitempty"`   // es una nota de voz o audio
+	Seconds  uint32  `json:"seconds,omitempty"` // duración del audio
+	Path     string  `json:"path,omitempty"`    // WAV listo para reproducir (audio_ready)
+	Error    string  `json:"error,omitempty"`
+	Chats    []Chat  `json:"chats,omitempty"`    // respuesta a chats
+	Messages []Event `json:"messages,omitempty"` // respuesta a messages
 }
 
 // Engine es una sesión de mensajería guardada en un directorio de datos.
 type Engine struct {
 	cli     *whatsmeow.Client
+	db      *sql.DB
 	dataDir string
 	emit    func(Event)
 	qr      <-chan whatsmeow.QRChannelItem
@@ -59,19 +65,29 @@ func Open(ctx context.Context, dataDir string, log waLog.Logger, emit func(Event
 		log = waLog.Noop
 	}
 	store.DeviceProps.Os = proto.String("OldieChat") // nombre en Dispositivos vinculados
+	hs := store.DeviceProps.HistorySyncConfig        // historial inicial mínimo
+	hs.FullSyncDaysLimit, hs.FullSyncSizeMbLimit = proto.Uint32(1), proto.Uint32(1)
+	hs.InitialSyncMaxMessagesPerChat = proto.Uint32(keepPerChat)
 	if err := os.MkdirAll(filepath.Join(dataDir, "media"), 0o700); err != nil {
 		return nil, err
 	}
-	addr := fmt.Sprintf("file:%s?_foreign_keys=on", filepath.Join(dataDir, "session.db"))
-	container, err := sqlstore.New(ctx, "sqlite3", addr, log.Sub("db"))
+	addr := fmt.Sprintf("file:%s?_foreign_keys=on&_busy_timeout=5000", filepath.Join(dataDir, "session.db"))
+	db, err := sql.Open("sqlite3", addr)
 	if err != nil {
+		return nil, err
+	}
+	container := sqlstore.NewWithDB(db, "sqlite3", log.Sub("db"))
+	if err = container.Upgrade(ctx); err != nil {
+		return nil, err
+	}
+	if _, err = db.ExecContext(ctx, schema); err != nil {
 		return nil, err
 	}
 	device, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		return nil, err
 	}
-	e := &Engine{cli: whatsmeow.NewClient(device, log.Sub("client")), dataDir: dataDir, emit: emit}
+	e := &Engine{cli: whatsmeow.NewClient(device, log.Sub("client")), db: db, dataDir: dataDir, emit: emit}
 	e.cli.AddEventHandler(e.handle)
 	return e, nil
 }
@@ -162,6 +178,7 @@ func (e *Engine) SendText(ctx context.Context, chat, text string) (string, error
 	if err != nil {
 		return "", err
 	}
+	e.save(Event{Type: "message", Chat: chat, ID: resp.ID, Time: resp.Timestamp.Unix(), FromMe: true, Text: text}, false)
 	return resp.ID, nil
 }
 
@@ -181,15 +198,44 @@ func (e *Engine) handle(evt any) {
 	case *events.PairSuccess:
 		e.emit(Event{Type: "paired", Sender: v.ID.ToNonAD().String()})
 	case *events.Message:
-		e.handleMessage(v)
+		if ev, ok := e.toEvent(v); ok {
+			e.save(ev, !ev.FromMe)
+			e.emit(ev)
+			if ev.Audio {
+				go e.prepareAudio(ev, v.Message.GetAudioMessage())
+			}
+		}
+	case *events.HistorySync:
+		for _, conv := range v.Data.GetConversations() {
+			chat, err := types.ParseJID(conv.GetID())
+			if err != nil {
+				continue
+			}
+			for _, hm := range conv.GetMessages() {
+				if m, err := e.cli.ParseWebMessage(chat, hm.GetMessage()); err == nil {
+					if ev, ok := e.toEvent(m); ok {
+						e.save(ev, false)
+					}
+				}
+			}
+		}
 	}
 }
 
-func (e *Engine) handleMessage(m *events.Message) {
+var linkRe = regexp.MustCompile(`(?i)(https?://(www\.)?|www\.)([^/\s?#:]+)\S*`)
+
+// toEvent convierte un mensaje en evento. Lo que no es texto ni audio va como
+// etiqueta corta, igual que en la terminal; estados, canales y mensajes sin
+// contenido visible (reacciones, avisos) no se emiten.
+func (e *Engine) toEvent(m *events.Message) (Event, bool) {
+	ctx := context.Background()
+	if s := m.Info.Chat.Server; s == types.BroadcastServer || s == types.NewsletterServer {
+		return Event{}, false
+	}
 	ev := Event{
 		Type:   "message",
-		Chat:   m.Info.Chat.String(),
-		Sender: m.Info.Sender.ToNonAD().String(),
+		Chat:   e.phoneJID(ctx, m.Info.Chat).String(),
+		Sender: e.phoneJID(ctx, m.Info.Sender).ToNonAD().String(),
 		Name:   m.Info.PushName,
 		ID:     m.Info.ID,
 		Time:   m.Info.Timestamp.Unix(),
@@ -197,6 +243,8 @@ func (e *Engine) handleMessage(m *events.Message) {
 		Device: &m.Info.Sender.Device,
 	}
 	msg := m.Message
+	kb := func(n uint64) string { return fmt.Sprintf(" %d KB", (n+1023)/1024) }
+	caption := ""
 	switch {
 	case msg.GetConversation() != "":
 		ev.Text = msg.GetConversation()
@@ -205,11 +253,28 @@ func (e *Engine) handleMessage(m *events.Message) {
 	case msg.GetAudioMessage() != nil:
 		ev.Audio = true
 		ev.Seconds = msg.GetAudioMessage().GetSeconds()
-		go e.prepareAudio(ev, msg.GetAudioMessage())
+	case msg.GetImageMessage() != nil:
+		ev.Text, caption = "imagen"+kb(msg.GetImageMessage().GetFileLength()), msg.GetImageMessage().GetCaption()
+	case msg.GetVideoMessage() != nil:
+		v := msg.GetVideoMessage()
+		ev.Text, caption = "video"+kb(v.GetFileLength()), v.GetCaption()
+		if v.GetGifPlayback() {
+			ev.Text = "gif" + kb(v.GetFileLength())
+		}
+	case msg.GetStickerMessage() != nil:
+		ev.Text = "sticker"
+	case msg.GetDocumentMessage() != nil:
+		d := msg.GetDocumentMessage()
+		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(d.GetFileName()), "."))
+		ev.Text, caption = strings.TrimSpace("documento "+ext)+kb(d.GetFileLength()), d.GetCaption()
 	default:
-		return // otros tipos todavía no se muestran
+		return ev, false
 	}
-	e.emit(ev)
+	if caption != "" {
+		ev.Text += ": " + caption
+	}
+	ev.Text = linkRe.ReplaceAllString(ev.Text, "link $3")
+	return ev, true
 }
 
 // prepareAudio descarga una nota de voz y la deja como WAV, que Android 4.1
