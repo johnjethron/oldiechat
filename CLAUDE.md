@@ -2,15 +2,16 @@
 
 Al empezar, lee `docs/ESTADO.md` (qué está hecho y para qué sirve cada carpeta).
 
-Proyecto: OldieChat (github.com/johnjethron/oldiechat). Cliente no oficial compatible con WhatsApp para teléfonos antiguos y dumbphones. Versión publicada: 0.2.2 (terminal, basada en nchat y whatsmeow).
+Proyecto: OldieChat (github.com/johnjethron/oldiechat). Cliente no oficial compatible con WhatsApp para teléfonos antiguos y dumbphones. Versión publicada: 0.2.3 (07-11-2026; terminal, basada en nchat y whatsmeow). En main: 0.2.4-dev, sin publicar.
 
 Productos: OldieChat App (Android, app nativa; también hace de puerta de enlace) y OldieChat SMS (cualquier teléfono con SMS, a través de un teléfono con OldieChat App). Toda interfaz nueva debe poder usarse solo con teclado físico (teclado numérico, cruceta y teclas de función).
 
 Usuario: la persona que quiere dejar el smartphone y prueba un dumbphone, o que quiere usar un Android 4G guardado como teléfono simple. Un teléfono soportado tiene que llamar y enviar SMS en las redes actuales.
 
-Teléfonos de prueba (el Fame es el banco de pruebas donde se construye el motor):
-- Samsung Galaxy Fame GT-S6810L: Android 4.1.2, kernel 3.0.15, ARMv7 Cortex-A9, 512 MB de RAM, con root (SuperSU), conectado por USB con ADB. Pantalla rota y sin táctil: se usa solo por ADB, no por TermOne Plus, hasta que llegue el Galaxy Core 2. El comando /system/bin/wsp abre OldieChat. Android 4.1 no trae cp ni chown -R.
-- Samsung Galaxy Core 2 SM-G355H: Android 4.4.2, ARMv7, 768 MB de RAM, solo 3G. Llega la primera semana de noviembre de 2026.
+Teléfonos de prueba (con los dos conectados se usa ANDROID_SERIAL):
+- Samsung Galaxy Fame GT-S6810L (serie 4d009ce074228000): Android 4.1.2, kernel 3.0.15, ARMv7 Cortex-A9, 512 MB de RAM, con root (SuperSU), conectado por USB con ADB. Pantalla rota y sin táctil: se usa solo por ADB para pruebas de SMS, con chip Movistar prepago. Sin sesión de OldieChat desde el 07-11-2026. Android 4.1 no trae cp ni chown -R.
+- Samsung Galaxy Core 2 SM-G355H (serie 4203ce4abc349100): Android 4.4.2, kernel 3.10, SELinux Enforcing, ARMv7, 768 MB de RAM, solo 3G, con root (SuperSU). Teléfono de uso diario con la sesión de OldieChat; el comando /system/bin/wsp abre OldieChat. Versión mexicana, sin red Movistar, usa wifi.
+- TermOne Plus: "Acción del botón ATRÁS" en "Envía TAB al terminal". Con otro valor, nchat queda vivo sin ventana.
 
 Equipo de compilación: PC de escritorio con CachyOS (shell fish). Proyecto en ~/Projects/OldieChat. Compilar con: time ./build.sh > build.log 2>&1. No borrar work/: guarda la caché de Go.
 
@@ -27,6 +28,10 @@ Dónde queda OldieChat:
 3. Dumbphones sin Android: solo OldieChat SMS llega a ellos.
 
 Costo de OldieChat SMS: lo decide cada usuario. OldieChat usa la menor cantidad de SMS posible, y el README muestra el costo real y la condición de los planes (SMS solo de persona a persona).
+
+Terminal: es el prototipo y desde la 0.2.3 queda en mantenimiento. Arreglos de lo que ya existe, whatsmeow, Go, certificados, phone-test, seguridad y respaldo van en la terminal. Funciones nuevas van a la app. Si algo es nuevo, chico y necesario a diario, se consulta.
+
+Publicar: una versión se publica solo cuando una actualización de whatsmeow lo obliga o hace falta para usuarios. Mientras, los arreglos se unen a main sin publicar (VERSION X.Y.Z-dev).
 
 Forma de trabajar:
 - Tengo TDA: avanza en pasos cortos y dime en una frase qué haces en cada uno.
