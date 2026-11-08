@@ -156,9 +156,9 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Estado al cierre del 7 de noviembre de 2026
 
-- Rama actual: `main` (`usuarios` y `main` apuntan al mismo commit salvo
-  `CLAUDE.md`, que solo está en `main`). `main` va 12 commits por delante de
-  `origin/main`: nada se subió. `VERSION` es `0.2.4-dev`.
+- Rama actual: `main`. `origin/main` está en `1378832` (la unión de `usuarios`,
+  subida por el dueño); `CLAUDE.md` y este cierre quedan solo en local.
+  `VERSION` es `0.2.4-dev`.
 - Compilado el 7/11 (4 min 5 s, sin errores) con `out/` al día; instalado en el
   Core 2 y probado a mano. Nada sin compilar ni sin probar.
 - `CLAUDE.md` actualizado: 0.2.3 publicada, teléfonos (Fame solo ADB, Core 2 de
