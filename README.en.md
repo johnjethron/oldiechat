@@ -243,6 +243,10 @@ A copied session is the same linked device, not a new one:
   (`adb shell su -c "rm -r /data/local/tmp/oldiechat/home"`) and delete the backup.
 - Logging out OldieChat from your main phone also logs out the new copy.
 
+## WhatsApp time limits
+
+WhatsApp unlinks devices that are not used. I recommend opening OldieChat at least every 30 days and WhatsApp on your main phone every 14 :) DGTL MINIMAL es el camino.
+
 ## Known limitations
 
 - **Emoji** are shown in black and white (Noto Emoji). Those the font lacks, or
