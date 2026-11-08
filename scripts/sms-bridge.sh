@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# sms-bridge.sh - puente de OldieChat SMS con WhatsApp (prototipo con root, Área 5, etapa 2a).
+# sms-bridge.sh - puente de OldieChat SMS con WhatsApp (prototipo con root, Área 5, etapas 2a y 2b).
 #
 # Va en el teléfono junto a player.jar (player/build.sh); el motor ya vinculado
 # está en /data/local/tmp/oldiechat-engine/. Se ejecuta a mano como shell (sin root):
@@ -94,53 +94,99 @@ say() {  # envía $1 al dueño (siempre a NUM), con el límite de 30 por hora
   log "SMS septetos=$s"
 }
 
-menu() {  # hasta 9 personas en 1 SMS; los números quedan fijos hasta el próximo menú
-  ask '{"cmd":"chats","kind":"people"}' chats
-  pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
-  J=${R#*'"chats":['}; m= i=0
+load() {  # los 9 chats más recientes de tipo $1 en $2C1.. (chat), $2W1.. (nombre) y $2U1.. (sin leer)
+  ask "{\"cmd\":\"chats\",\"kind\":\"$1\"}" chats
+  J=${R#*'"chats":['}; i=0
   while [ $i -lt 9 ]; do
-    case $J in *'"chat":"'*) ;; *) break ;; esac
-    val chat "$J"; ch=$v; val name "$J"; [ -n "$v" ] || v=${ch%@*}
-    J=${J#*'"unread":'}; u=${J%%[!0-9]*}
-    l="$((i + 1)) $v"; [ "${u:-0}" -gt 0 ] && l="$l ($u)"
-    sept "$h$m$l$nl$T_PIE"; [ $s -gt 160 ] && break
-    i=$((i + 1)); m="$m$l$nl"; eval "C$i=\$ch W$i=\$v"
+    i=$((i + 1)); ch= v= u=0
+    case $J in *'"chat":"'*)
+      val chat "$J"; ch=$v; val name "$J"; [ -n "$v" ] || v=${ch%@*}
+      J=${J#*'"unread":'}; u=${J%%[!0-9]*} ;;
+    esac
+    eval "$2C$i=\$ch $2W$i=\$v $2U$i=\$u"
   done
-  while [ $i -lt 9 ]; do i=$((i + 1)); eval "C$i= W$i="; done
+}
+
+menu() {  # hasta 9 chats de tipo $1 (prefijo $2) en 1 SMS; los números quedan fijos hasta el próximo menú
+  load "$1" "$2"
+  pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
+  m= i=0
+  while [ $i -lt 9 ]; do
+    eval "ch=\$$2C$((i + 1)) v=\$$2W$((i + 1)) u=\$$2U$((i + 1))"; [ -n "$ch" ] || break
+    l="$((i + 1)) $v"; [ "$u" -gt 0 ] && l="$l ($u)"
+    sept "$h$m$l$nl$T_PIE"; [ $s -gt 160 ] && break
+    i=$((i + 1)); m="$m$l$nl"
+  done
+  while [ $i -lt 9 ]; do i=$((i + 1)); eval "$2C$i= $2W$i="; done
   say "$h$m$T_PIE"
 }
 
-open() {  # mensajes nuevos de la persona $1 en 1 SMS, los más recientes
-  eval "ch=\$C$1 w=\$W$1"; [ -n "$ch" ] || { menu; return; }
-  lastc=$ch lastw=$w
-  ask "{\"cmd\":\"messages\",\"chat\":\"$ch\"}" messages
+msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nuevo) y su hora en $2 t1..;
+          # quien escribe: el nombre de pila de $3, o en grupos ($3 vacío) el de cada mensaje
+  ask "{\"cmd\":\"messages\",\"chat\":\"$1\"}" messages
   J=${R#*'"messages":['}; n=0
   while :; do
     case $J in *'{"type":"message"'*) ;; *) break ;; esac
     J=${J#*'{"type":"message"'}; o=${J%%'{"type":"message"'*}
-    case $o in *'"from_me":true'*) who=$T_YO ;; *) who=${w%% *}; [ ${#who} -gt 8 ] && who=${who%"${who#????????}"} ;; esac
+    case $o in *'"from_me":true'*) who=$T_YO ;; *)
+      who=$3; [ -n "$who" ] || { val name "$o"; who=$v; }
+      [ -n "$who" ] || { val sender "$o"; who=${v%%[@:]*}; }
+      who=${who%% *}; [ ${#who} -gt 8 ] && who=${who%"${who#????????}"} ;;
+    esac
     val text "$o"
     case $o in *'"audio":true'*)
       x=${o#*'"seconds":'}; x=${x%%[!0-9]*}; x=${x:-0}; mm=$((x / 60)) ss=$((x % 60))
       [ $mm -lt 10 ] && mm=0$mm; [ $ss -lt 10 ] && ss=0$ss; v="audio $mm.$ss" ;;
     esac
-    n=$((n + 1)); eval "M$n=\"\$who: \$v\""
+    x=${o#*'"time":'}; x=${x%%[!0-9]*}
+    n=$((n + 1)); eval "$2$n=\"\$who: \$v\" $2t$n=\${x:-0}"
   done
-  pre
-  [ $n -gt 0 ] || { say "$p$T_NADA $w"; return; }
-  t=
-  while [ $n -gt 0 ]; do
-    eval "l=\$M$n"; n=$((n - 1)); x=$l; [ -n "$t" ] && x="$l$nl$t"
+}
+
+pack() {  # en t, las líneas de $1 desde la $2 hacia atrás (de la más nueva), hasta $3 y lo que quepa con el prefijo p
+  t= j=$2 k=0
+  while [ $j -gt 0 ] && [ $k -lt $3 ]; do
+    eval "l=\$$1$j"; [ -n "$l" ] || break; j=$((j - 1)) k=$((k + 1))
+    x=$l; [ -n "$t" ] && x="$l$nl$t"
     sept "$p$x"; [ $s -le 160 ] && { t=$x; continue; }
     [ -n "$t" ] && break
     while [ $s -gt 158 ]; do [ $s -gt 170 ] && l=${l%??????????} || l=${l%?}; sept "$p$l"; done
     t="$l.."; break
   done
-  say "$p$t"
+}
+
+open() {  # mensajes nuevos de la persona $1 en 1 SMS, los más recientes
+  eval "ch=\$C$1 w=\$W$1"; [ -n "$ch" ] || { menu people; return; }
+  lastc=$ch lastw=$w
+  msgs "$ch" M "$w"; pre
+  [ $n -gt 0 ] || { say "$p$T_NADA $w"; return; }
+  pack M $n 99; say "$p$t"
+}
+
+news() {  # 00: lo nuevo de cada persona en 1 SMS, cada línea con su número de menú; si no cabe, lo más reciente
+  load people ""; pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
+  i=0
+  while [ $i -lt 9 ]; do
+    i=$((i + 1)); eval "ch=\$C$i w=\$W$i u=\$U$i H$i=0"
+    [ "$u" -gt 0 ] && { msgs "$ch" P${i}_ "$w"; eval "H$i=\$n"; }
+  done
+  k=0   # mezcla de la más nueva a la más antigua, en L30 hacia abajo
+  while [ $k -lt 25 ]; do
+    b=0 bt=-1 i=0
+    while [ $i -lt 9 ]; do
+      i=$((i + 1)); eval "j=\$H$i"; [ $j -gt 0 ] || continue
+      eval "x=\$P${i}_t$j"; [ $x -gt $bt ] && b=$i bt=$x
+    done
+    [ $b -gt 0 ] || break
+    eval "j=\$H$b"; eval "L$((30 - k))=\"$b \$P${b}_$j\" H$b=$((j - 1))"; k=$((k + 1))
+  done
+  eval "L$((30 - k))="
+  p=$h; [ $k -gt 0 ] || { say "$p$T_NADA"; return; }
+  pack L 30 99; say "$p$t"
 }
 
 send() {  # escribe $3 a $1 (nombre $2); silencio si sale bien
-  lastc=$1 lastw=$2; c=$1 to=$2; [ -n "$SELF" ] && c=$ME to="Saved Messages"
+  c=$1 to=$2; [ -n "$SELF" ] && c=$ME to="Saved Messages"
   x=${3//\\/$bs$bs}; x=${x//\"/$bs\"}; x=${x//$nl/${bs}n}
   ask "{\"cmd\":\"send\",\"chat\":\"$c\",\"text\":\"$x\"}" sent
   case $R in
@@ -153,14 +199,15 @@ cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
   b=${1%"${1##*[! ]}"}; b=${b#"${b%%[! ]*}"}; typeset -l lc="$b"
   [ -z "$OUT" ] || { say "$T_SESION"; return; }
   case $lc in
-    ''|0) menu ;;
+    ''|0) menu people ;;
+    00) news ;;
     a) : > "$HELLO"; say "$T_AYUDA" ;;   # la ayuda trae el logo: sin bienvenida
     [1-9]) open "$lc" ;;
-    00|g|g[1-9]|g[1-9]' '*) menu ;;      # etapa 2b
+    g|g[1-9]|g[1-9]' '*) menu people ;;  # grupos: siguiente paso
     [1-9]' '*)
       eval "c=\$C${lc%% *} w=\$W${lc%% *}"; x=${b#?}; x=${x#"${x%%[! ]*}"}
-      if [ -n "$c" ]; then send "$c" "$w" "$x"; else menu; fi ;;
-    *) if [ -n "$lastc" ]; then send "$lastc" "$lastw" "$b"; else menu; fi ;;
+      if [ -n "$c" ]; then lastc=$c lastw=$w; send "$c" "$w" "$x"; else menu people; fi ;;
+    *) if [ -n "$lastc" ]; then send "$lastc" "$lastw" "$b"; else menu people; fi ;;
   esac
 }
 
