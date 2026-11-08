@@ -27,7 +27,7 @@ Dónde queda OldieChat:
 2. Android con WhatsApp, en versión mínima: sin segundo plano, sin notificaciones, sin estados ni canales, pensado para teclas y liviano.
 3. Dumbphones sin Android: solo OldieChat SMS llega a ellos.
 
-Costo de OldieChat SMS: lo decide cada usuario. OldieChat usa la menor cantidad de SMS posible, y el README muestra el costo real y la condición de los planes (SMS solo de persona a persona).
+Costo de OldieChat SMS: lo decide cada usuario. Son dos líneas con SMS: la del teléfono cliente y la de la puerta de enlace (500 SMS al mes cada una en uso normal, 1.000 en uso intenso). OldieChat usa la menor cantidad de SMS posible, y el README muestra el costo real y las condiciones de los planes de las cuatro compañías, sin recomendar ninguna.
 
 Terminal: es el prototipo y desde la 0.2.3 queda en mantenimiento. Arreglos de lo que ya existe, whatsmeow, Go, certificados, phone-test, seguridad y respaldo van en la terminal. Funciones nuevas van a la app. Si algo es nuevo, chico y necesario a diario, se consulta.
 
