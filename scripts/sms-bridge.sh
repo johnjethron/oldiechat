@@ -163,6 +163,13 @@ open() {  # mensajes nuevos de la persona $1 en 1 SMS, los más recientes
   pack M $n 99; say "$p$t"
 }
 
+group() {  # los últimos 3 mensajes nuevos del grupo $1 en 1 SMS, con quien escribe
+  eval "ch=\$GC$1 w=\$GW$1"; [ -n "$ch" ] || { menu groups G; return; }
+  msgs "$ch" M; pre
+  [ $n -gt 0 ] || { say "$p$T_NADA $w"; return; }
+  pack M $n 3; say "$p$t"
+}
+
 news() {  # 00: lo nuevo de cada persona en 1 SMS, cada línea con su número de menú; si no cabe, lo más reciente
   load people ""; pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
   i=0
@@ -203,7 +210,11 @@ cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
     00) news ;;
     a) : > "$HELLO"; say "$T_AYUDA" ;;   # la ayuda trae el logo: sin bienvenida
     [1-9]) open "$lc" ;;
-    g|g[1-9]|g[1-9]' '*) menu people ;;  # grupos: siguiente paso
+    g) menu groups G ;;
+    g[1-9]) group "${lc#g}" ;;
+    g[1-9]' '*)   # a un grupo; no cambia la última persona
+      x=${lc%% *}; eval "c=\$GC${x#g} w=\$GW${x#g}"; x=${b#??}; x=${x#"${x%%[! ]*}"}
+      if [ -n "$c" ]; then send "$c" "$w" "$x"; else menu groups G; fi ;;
     [1-9]' '*)
       eval "c=\$C${lc%% *} w=\$W${lc%% *}"; x=${b#?}; x=${x#"${x%%[! ]*}"}
       if [ -n "$c" ]; then lastc=$c lastw=$w; send "$c" "$w" "$x"; else menu people; fi ;;
