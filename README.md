@@ -199,19 +199,53 @@ aparece en el teléfono con Volumen abajo + G.
   convierten y suenan en segundo plano después de 1 o 2 segundos, y se detienen
   al salir. Si uno no suena, el detalle de cada paso queda en
   `/data/local/tmp/oldiechat/home/audio.log`.
+- **Adjuntos**: al salir se borran todos los descargados (audios, fotos, videos
+  y documentos); si abres uno de nuevo, se descarga otra vez.
+- **Mensajes largos**: uno más alto que la pantalla, ya seleccionado, se
+  desplaza de a 2 líneas con Vol. arriba + W/S antes de pasar al siguiente.
 - **Archivados**: la barra de estado muestra `[Archivados]` mientras ves esa
   lista, que incluye todos tus chats archivados.
 - **Toques**: tocar un nombre de la lista abre esa conversación, y dos toques
   seguidos en el área de escritura abren o cierran el teclado.
 
-## Si después usas `adb shell` sin root
+## Si pierdes el teléfono con OldieChat
 
-`wsp` ejecuta OldieChat como root, así que los archivos nuevos quedan a nombre de
-root. Para volver a usarlo desde `adb shell` sin root:
+La carpeta `/data/local/tmp/oldiechat/home` guarda las llaves de tu sesión de
+WhatsApp y solo root puede leerla (`root:root`, permisos 700). Aun así, si pierdes
+el teléfono, desvincúlalo desde el teléfono principal: en WhatsApp abre
+**Ajustes > Dispositivos vinculados**, toca el dispositivo de OldieChat y elige
+**Cerrar sesión**. Desde ese momento las llaves del teléfono perdido no sirven.
 
+## Actualizar, respaldar y restaurar
+
+Para actualizar, ejecuta `./install.sh` de la versión nueva: conserva la sesión y
+la configuración, y dice qué versión había y cuál quedó.
+
+Para pasar la sesión a otro teléfono sin volver a vincular, con OldieChat cerrado
+y desde la carpeta del paquete:
+
+```bash
+./session.sh respaldar
 ```
-su -c "chown -R shell:shell /data/local/tmp/oldiechat/home"
+
+El respaldo queda en `~/Respaldos/oldiechat/` (permisos 600). Guárdalo en un lugar
+seguro: con él se lee y se escribe en tu WhatsApp. En el teléfono nuevo, después
+de `./install.sh`:
+
+```bash
+./session.sh restaurar ~/Respaldos/oldiechat/oldiechat-sesion-<fecha>.tar.gz
 ```
+
+Con varios teléfonos conectados, elige cada uno con `ANDROID_SERIAL=<serie>`.
+
+Una sesión copiada es el mismo dispositivo vinculado, no uno nuevo:
+
+- Respalda justo antes de mudarte y restaura enseguida. Cuando el teléfono nuevo
+  abra OldieChat, el respaldo y la copia del teléfono anterior quedan atrasados y
+  pierden mensajes: no vuelvas a abrir OldieChat en el anterior, borra su copia
+  (`adb shell su -c "rm -r /data/local/tmp/oldiechat/home"`) y borra el respaldo.
+- Cerrar la sesión de OldieChat desde el teléfono principal cierra también la
+  copia nueva.
 
 ## Limitaciones conocidas
 
@@ -338,6 +372,8 @@ Parches aplicados a nchat (`nchat/patches/`):
 | 0010 | Adjuntos con etiqueta corta: `audio mm.ss`, `imagen`, `video`, `sticker`, `documento pdf`. |
 | 0011 | Anchos de carácter de la terminal (medidos en el teléfono) en lugar de los de la biblioteca C. |
 | 0012 | Versión de whatsmeow (fecha, `go.mod`, licencias); la genera `scripts/update-whatsmeow.sh`. |
+| 0013 | Un mensaje más alto que la pantalla se desplaza de a 2 líneas con Vol. arriba + W/S antes de pasar al siguiente. |
+| 0014 | Con SuperSU en Android 4.4, la pantalla se rehace al abrir o cerrar el teclado: nchat sigue el tamaño de la terminal de TermOne Plus (`OLDIECHAT_TTY`, que pone `wsp`). |
 
 Los parches al runtime de Go, si alguna vez hacen falta, van en `go/patches/`
 (ver [MAINTAINING.md](MAINTAINING.md)).

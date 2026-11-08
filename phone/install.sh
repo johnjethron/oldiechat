@@ -6,6 +6,7 @@
 #   - copia el programa a /data/local/tmp/oldiechat (nchat, conversor y
 #     reproductor de audio, terminfo, zonas horarias, scripts)
 #   - mueve la sesión de una instalación anterior en /data/local/tmp/nchat
+#   - deja home/ (las llaves de WhatsApp) solo para root: root:root, 700
 #   - copia key.conf, ui.conf, color.conf, glyphs.txt y guide.txt a la configuración (respalda los existentes)
 #   - crea /system/etc/resolv.conf
 #   - instala /system/etc/ssl/certs/ca-certificates.crt
@@ -69,8 +70,12 @@ check() {
   n="$(adb devices | awk 'NR>1 && $2=="device"' | wc -l)"
   [[ -n "${ANDROID_SERIAL:-}" || "${n}" -eq 1 ]] || die "hay ${n} teléfonos conectados; usa ANDROID_SERIAL=..."
   root "id" | grep -q 'uid=0' || die "su no da root (acepta el permiso de SuperSU en el teléfono y repite)"
+  [[ "$(adb shell ps)" != *oldiechat/bin/nchat* ]] || die "OldieChat está abierto en el teléfono: ciérralo y repite"
   phone "cat /proc/cpuinfo" | grep -qi 'ARMv7' || echo "Aviso: el teléfono no informa un procesador ARMv7"
   CA="$(find_ca_bundle)"
+  # versión anterior: la línea "OldieChat X (c)" de /system/bin/wsp
+  PREV="$(phone "cat /system/bin/wsp" | sed -n 's/.*OldieChat \([^ ]*\) (c).*/\1/p')" || true
+  [[ -n "${PREV}" ]] || ! root "[ -d ${DEST}/home ] || [ -d ${OLD_DEST}/home ]" >/dev/null || PREV="desconocida"
   echo "Paquete: ${PKG}"
   echo "Certificados: ${CA}"
 }
@@ -88,7 +93,7 @@ push_files() {
     adb push "${PKG}/oldiechat.png" /sdcard/OldieChat/oldiechat.png
   fi
 
-  printf '#!/system/bin/sh\nif [ "$1" = --version ]; then\n  echo "OldieChat %s (c) 2026 John Jethron"\n  echo "Basado en nchat (c) Kristofer Berggren"\n  echo "Licencia GNU GPL v3"\n  exit 0\nfi\nsu -c true || { echo "wsp: SuperSU no dio permiso. Abre SuperSU, borra TermOne Plus y vuelve a darle permiso con Recordar" >&2; exit 1; }\nsu -c "TERM=${TERM:-screen-256color} %s/oldiechat.sh $*"\n' "$(cat "${PKG}/VERSION")" "${DEST}" > "${TMPDIR:-/tmp}/wsp.$$"
+  printf '#!/system/bin/sh\nif [ "$1" = --version ]; then\n  echo "OldieChat %s (c) 2026 John Jethron"\n  echo "Basado en nchat (c) Kristofer Berggren"\n  echo "Licencia GNU GPL v3"\n  exit 0\nfi\nsu -c true || { echo "wsp: SuperSU no dio permiso. Abre SuperSU, borra TermOne Plus y vuelve a darle permiso con Recordar" >&2; exit 1; }\nsu -c "OLDIECHAT_TTY=/proc/$$/fd/0 TERM=${TERM:-screen-256color} %s/oldiechat.sh $*" && kill -HUP $PPID\n' "$(cat "${PKG}/VERSION")" "${DEST}" > "${TMPDIR:-/tmp}/wsp.$$"
   adb push "${TMPDIR:-/tmp}/wsp.$$" "${STAGE}/wsp"
   rm -f "${TMPDIR:-/tmp}/wsp.$$"
 
@@ -124,7 +129,7 @@ install_program() {
   fi
 
   log "Instalando la configuración (key, ui, color, glyphs, guide)"
-  root "mkdir ${DEST}/home ${DEST}/home/.config ${CONFDIR} 2>/dev/null; chmod 700 ${DEST}/home"
+  root "mkdir ${DEST}/home ${DEST}/home/.config ${CONFDIR} 2>/dev/null; chown 0:0 ${DEST}/home; chmod 700 ${DEST}/home"
   for f in key.conf ui.conf color.conf glyphs.txt guide.txt; do
     [[ -f "${PKG}/config/${f}" ]] || continue
     root "if [ -f ${CONFDIR}/${f} ]; then cat ${CONFDIR}/${f} > ${CONFDIR}/${f}.bak; chmod 600 ${CONFDIR}/${f}.bak; fi; \
@@ -192,10 +197,16 @@ finish() {
   phone "rm -r ${STAGE}" >/dev/null || true
   root "${DEST}/oldiechat.sh --version" | grep -m1 '^nchat' || die "OldieChat no arrancó en el teléfono"
   root "${DEST}/bin/oldiechat-audio 2>&1; true" | grep -q 'uso:' || die "oldiechat-audio no arrancó en el teléfono"
+  if [[ -n "${PREV}" ]]; then
+    echo "Versión anterior: ${PREV}. Instalada: $(cat "${PKG}/VERSION")."
+  else
+    echo "Instalación nueva: $(cat "${PKG}/VERSION")."
+  fi
   cat <<EOF
 
 Listo. En TermOne Plus escribe:  wsp
-Si es la primera vez, vincula WhatsApp desde el equipo:
+Si es la primera vez, restaura un respaldo con ./session.sh restaurar <archivo>
+o vincula WhatsApp desde el equipo:
   adb shell
   su -c "TERM=screen-256color ${DEST}/oldiechat.sh --setup"
 EOF

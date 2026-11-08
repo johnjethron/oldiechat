@@ -1,0 +1,101 @@
+diff --git a/src/uihistoryview.cpp b/src/uihistoryview.cpp
+index de9eed75..b7e23aee 100644
+--- a/src/uihistoryview.cpp
++++ b/src/uihistoryview.cpp
+@@ -413,7 +413,18 @@ void UiHistoryView::Draw()
+     }
+ 
+     const int maxMessageLines = (m_PaddedH - 1);
+-    if (firstMessage && ((int)wlines.size() > maxMessageLines))
++    if (isSelectedMessage)
++    {
++      // a long selected message scrolls inside the screen with up/down
++      int& msgTop = m_Model->GetMsgTopLocked();
++      int& msgTopMax = m_Model->GetMsgTopMaxLocked();
++      msgTopMax = std::max((int)wlines.size() - maxMessageLines, 0);
++      msgTop = std::min(msgTop, msgTopMax);
++      if (msgTopMax > 0) redrawwin(m_PaddedWin); // TermOne Plus does not repaint the scroll
++      if (msgTop < msgTopMax) reactionLines = 0;
++      wlines = std::vector<std::wstring>(wlines.begin() + msgTop, wlines.end() - (msgTopMax - msgTop));
++    }
++    else if (firstMessage && ((int)wlines.size() > maxMessageLines))
+     {
+       wlines.resize(maxMessageLines - 1);
+       wlines.push_back(L"[...]");
+diff --git a/src/uimodel.cpp b/src/uimodel.cpp
+index 4f345597..8acd1fd4 100644
+--- a/src/uimodel.cpp
++++ b/src/uimodel.cpp
+@@ -8,6 +8,7 @@
+ #include "uimodel.h"
+ 
+ #include <algorithm>
++#include <climits>
+ 
+ #include <ncurses.h>
+ #include <sys/ioctl.h>
+@@ -304,13 +305,24 @@ void UiModel::Impl::EntryKeyHandler(wint_t p_Key)
+   {
+     if (GetSelectMessageActive() && !GetEditMessageActive())
+     {
+-      messageOffset = std::min(messageOffset + 1, messageCount - 1);
+-      RequestMessagesCurrentChat();
++      m_MsgTop = std::min(m_MsgTop, m_MsgTopMax);
++      if (m_MsgTop > 0)
++      {
++        m_MsgTop = std::max(m_MsgTop - 2, 0);
++      }
++      else
++      {
++        // a long message is entered from its end
++        m_MsgTop = (messageOffset < (messageCount - 1)) ? INT_MAX : 0;
++        messageOffset = std::min(messageOffset + 1, messageCount - 1);
++        RequestMessagesCurrentChat();
++      }
+     }
+     else
+     {
+       if ((cursorEnd || (entryPos == 0)) && (messageCount > 0) && !GetEditMessageActive())
+       {
++        m_MsgTop = INT_MAX;
+         SetSelectMessageActive(true);
+       }
+       else if (!cursorEnd)
+@@ -354,9 +366,14 @@ void UiModel::Impl::EntryKeyHandler(wint_t p_Key)
+   {
+     if (GetSelectMessageActive() && !GetEditMessageActive())
+     {
+-      if (messageOffset > 0)
++      if (m_MsgTop < m_MsgTopMax)
++      {
++        m_MsgTop = std::min(m_MsgTop + 2, m_MsgTopMax);
++      }
++      else if (messageOffset > 0)
+       {
+         messageOffset = messageOffset - 1;
++        m_MsgTop = 0;
+       }
+       else
+       {
+diff --git a/src/uimodel.h b/src/uimodel.h
+index 4e41fd67..758a7a99 100644
+--- a/src/uimodel.h
++++ b/src/uimodel.h
+@@ -138,6 +138,8 @@ private:
+ 
+     void SetSelectMessageActive(bool p_SelectMessageActive);
+     bool GetSelectMessageActive();
++    int m_MsgTop = 0; // first line shown of a long selected message
++    int m_MsgTopMax = 0;
+ 
+     bool GetListDialogActive();
+     void SetListDialogActive(bool p_ListDialogActive);
+@@ -373,6 +375,8 @@ public:
+   bool GetFileListDialogActiveLocked();
+   bool GetMessageDialogActiveLocked();
+   int GetMessageOffsetLocked(const std::string& p_ProfileId, const std::string& p_ChatId);
++  int& GetMsgTopLocked() { return GetImpl().m_MsgTop; }
++  int& GetMsgTopMaxLocked() { return GetImpl().m_MsgTopMax; }
+   std::unordered_map<std::string, ChatMessage>& GetMessagesLocked(const std::string& p_ProfileId,
+                                                                   const std::string& p_ChatId);
+   std::vector<std::string>& GetMessageVecLocked(const std::string& p_ProfileId, const std::string& p_ChatId);
