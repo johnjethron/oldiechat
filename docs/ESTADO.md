@@ -197,27 +197,54 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   (`peer_recipient_pn`) y hay que convertirlo. Los mensajes que no son texto ni
   audio no se descartan: se emiten con una etiqueta corta como en la terminal
   ("imagen 45 KB", "video", "documento pdf", "sticker").
-- Pendiente, aprobado por el dueño: puntos 3 (órdenes de chats y mensajes, tope
-  de 50 mensajes por chat en la tabla propia y historial inicial mínimo), 4
-  (Device en el evento), 5 (`pair_qr`, `logout`) y 6 (la terminal sigue con su
-  propia vinculación; app y puerta de enlace comparten el motor). Emojis en
-  `engine/glyphs` con dos modos: pantalla con `glyphs.txt` del teléfono; SMS
-  quita todos los emoji sin reemplazo, un mensaje solo de emojis no se reenvía y
-  cada SMS queda en GSM de 7 bits (160 caracteres). Texto del README aprobado:
-  mensajes pendientes 30 días, principal cada 14 días.
-- Nada sin compilar: `out/engine/oldiechat-engine-armv7` del 7/11 está en el Fame.
-- Pendientes anotados (sin código): grupos sin probar en `chats` (no había
-  mensajes de grupo guardados). Modo pantalla de `engine/glyphs`: los emoji sin
-  línea R (👍🏽) y el selector de variante que queda tras un reemplazo (`<3` + U+FE0F)
-  pasan tal cual; se decide en la app, según su fuente.
-- Sin probar: cambio de nombre de grupo y etiquetas `ubicacion` y `contacto`.
+- Puntos 1 a 5 hechos en `motor` el 7 de noviembre de 2026 (commits `80cedf6` a
+  `fa100cb`). Punto 6 (una sola vinculación) no se implementa: la terminal sigue
+  con su propia sesión; app y puerta de enlace compartirán la del motor.
+- Evento `message` con `device` (0 = principal).
+- Órdenes nuevas: `logout` (desvincula, vacía chats y mensajes guardados, emite
+  `logged_out` y termina), `chats` (`kind` `people` o `groups`: chat, nombre,
+  hora del último mensaje y no leídos) y `messages` (mensajes de un chat desde la
+  consulta anterior; en la primera, todos los guardados).
+- Tablas propias en `session.db` (`engine/wa/store.go`): `oc_message` (tope de 50
+  por chat, se borran los más viejos) y `oc_chat` (nombre de grupo y último
+  mensaje entregado). El LID se cambia por el número cuando se conoce. Los
+  mensajes del historial no cuentan como no leídos. Lo enviado con `send` también
+  se guarda. Estados y canales no se guardan ni se emiten; reacciones tampoco.
+  El nombre de grupo se pide una vez al servidor y se actualiza con el evento de
+  cambio de nombre. Cuando el principal cierra la sesión también se vacían.
+- Etiquetas: `imagen N KB`, `video N KB`, `gif N KB`, `sticker`,
+  `documento <ext> N KB`, `ubicacion`, `contacto`, `link <dominio>`; el texto de
+  imagen, video o documento va después de `: `.
+- `media/` (WAV de audios) se borra al arrancar y al cerrar el motor.
+- Historial inicial: `FullSyncDaysLimit` 1, `FullSyncSizeMbLimit` 1 e
+  `InitialSyncMaxMessagesPerChat` 50.
+- `engine/glyphs` y opción `--glyphs <archivo>|sms` en `run`: pantalla aplica solo
+  las líneas R de `glyphs.txt`; SMS deja GSM de 7 bits (quita tildes que GSM no
+  tiene, conserva ñ, é, ¿), quita emoji sin reemplazo, y un mensaje que queda
+  vacío no se emite. `golang.org/x/text` pasó a dependencia directa (ya estaba en
+  `vendor/`).
+- README (español e inglés): sección "Plazos de WhatsApp" / "WhatsApp time limits"
+  con el texto del dueño (`86c8788`).
+- Probado en el Fame el 7 de noviembre de 2026, sin su, solo enviando a Saved
+  Messages: `chats` y `messages` (la segunda consulta vuelve vacía), emoji en los
+  dos modos, `logout` (tablas vacías y `need_pairing` al abrir) y vincular de nuevo
+  con código. Historial recibido: 31 chats de personas (395 mensajes) y 7 grupos
+  (14 mensajes, todos con nombre); ningún chat pasó de 50; el mensaje más antiguo
+  era de unas 3 semanas antes (el límite de 1 día no lo acortó).
 - Decisión del dueño: la app y el motor vinculan solo con el código de 8
-  caracteres, sin QR. La orden `pair_qr` se quitó a propósito; su código está en
-  el commit `f2b76b2`, por si WhatsApp deja de permitir el código. La terminal no
-  cambia: sigue vinculando con el QR de nchat.
+  caracteres, sin QR. La orden `pair_qr` se quitó a propósito (`fa100cb`); su
+  código está en el commit `f2b76b2`, por si WhatsApp deja de permitir el código.
+  La terminal no cambia: sigue vinculando con el QR de nchat.
+- Sin probar: cambio de nombre de grupo, etiquetas `ubicacion` y `contacto`, y el
+  motor de `fa100cb` (sin `pair_qr`) en el teléfono: el Fame tiene la compilación
+  anterior, que todavía incluye `pair_qr`.
+- Pendientes anotados (sin código): modo pantalla de `engine/glyphs`: los emoji
+  sin línea R (👍🏽) y el selector de variante que queda tras un reemplazo (`<3` +
+  U+FE0F) pasan tal cual; se decide en la app, según su fuente.
 - Pendiente para el Área 1, etapa 5: la opción de días del historial reciente
-  (`RecentSyncDaysLimit`), si la sincronización usa mucha memoria. Hoy el
-  historial inicial trae unas 3 semanas, con tope de 50 mensajes por chat.
+  (`RecentSyncDaysLimit`), si la sincronización usa mucha memoria.
+- El primer "hola" después de la primera vinculación no llegó; causa sin
+  confirmar. Sigue en vigilancia.
 
 ## Otras ramas
 
@@ -232,21 +259,26 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Cierre del 7 de noviembre de 2026 (noche)
 
-- Rama de trabajo: `motor` (`main` + `4e5922b` y este cierre). `main` tiene 5
-  commits locales sin subir (incluye `0a169e1` y `f292803`); `sms` sin cambios.
-- Compilado el 7/11 a las 22:16 desde `motor` (4 min 16 s, sin errores): `out/`
-  tiene el motor nuevo y el paquete de la terminal 0.2.4-dev rearmado (sin cambios
-  de nchat).
-- Fame: motor en `/data/local/tmp/oldiechat-engine/` con la sesión vinculada a la
-  cuenta del dueño ("Otro dispositivo" en el iPhone), detenido. Si no se abre en
-  30 días se desvincula. Core 2 sin tocar.
-- Nada sin probar de lo hecho. Lo siguiente se compila y se prueba en el Fame.
+- Rama de trabajo: `motor` (`main` + la etapa 7 y este cierre), sin subir. `main`
+  tiene 6 commits locales sin subir; el último, `d127578` (reglas de textos para
+  personas y de vinculación solo con código en `CLAUDE.md`), todavía no está en
+  `motor`. `sms` sin cambios.
+- Compilado el 7/11 a las 23:24 desde `fa100cb` (4 min 14 s, sin errores,
+  `build.log`): `out/engine/oldiechat-engine-armv7` al día y el paquete de la
+  terminal 0.2.4-dev rearmado (sin cambios de nchat).
+- Fame: en `/data/local/tmp/oldiechat-engine/` están el motor (compilación de las
+  23:03, con `pair_qr`), `glyphs.txt` y `data/` con la sesión vinculada de nuevo
+  el 7/11 cerca de las 23:06 y el historial guardado. Motor detenido. Core 2 sin
+  tocar.
+- Falta instalar en el Fame el motor de `out/engine/` y probar que vincula y
+  conecta igual sin `pair_qr`.
 
 ## Qué sigue
 
-- Área 1, etapa 7, puntos 3, 4, 5 y 6 en `engine/` (ver la sección de la etapa 7),
-  con el visto bueno del dueño antes de empezar.
-
+- Instalar en el Fame el motor de `out/engine/` (sin `pair_qr`) y comprobar que
+  conecta; decidir si `motor` se une a `main` (y traer `d127578` a `motor`).
+- Área 1, etapa 7: probar cuando aparezcan el cambio de nombre de grupo y las
+  etiquetas `ubicacion` y `contacto`.
 - Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva;
   Área 5, etapa 1 la indica el dueño.
 - Área 3: etapas 1, 2 y 10 hechas y unidas a `main`. La etapa 3 (logo grande al
@@ -255,7 +287,6 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   con el audio desde nchat, hora local en `audio.log`. Se unen a `main` como
   0.2.4-dev; la 0.2.4 se publica solo si whatsmeow lo obliga o hace falta para
   usuarios (regla en `CLAUDE.md`).
-- Decidir si la rama `sms` se une a `main`; Área 5, etapa 1 la indica el dueño.
 
 ## Archivos
 
