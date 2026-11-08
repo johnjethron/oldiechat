@@ -316,8 +316,10 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   Archivados (`c9ebe78`): la orden `chats` del motor trae `"archived":true` en los
   chats archivados (de `ChatSettings` de whatsmeow; la app lo usará para su pantalla de
   archivados) y el puente los salta en el menú de personas, en `00` y en `g`; no hay
-  comando para verlos. Compilado el 8/11 a las 19:07 (`out/engine/`, sin errores), sin
-  instalar en el Fame ni probar: espera el visto bueno del dueño.
+  comando para verlos. Compilado el 8/11 a las 19:07 (`out/engine/`, sin errores) e
+  instalado en el Fame: retomó la sesión sin pedir código; de 7 grupos, 6 archivados,
+  y `g` mostró solo el no archivado; `0` y `00` mostraron personas (ninguna de las 33
+  está archivada); el salto de una persona archivada se probó con un JSON falso.
   El límite de 30 SMS por hora se guarda en `sms-bridge-sent` (junto al script) y
   sobrevive a un reinicio (`da51978`, probado con -t -s); `[OK]` sigue en memoria.
 - Llamadas: 2 de 4 no llegaron al módem (sin `MSG_INCOMING_CALL_IND` en el registro
@@ -362,15 +364,29 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   llamadas; SMS falsos y llamada falsa borrados. Core 2 sin tocar.
 - Falta que el dueño escriba los textos de los marcadores.
 
+## Cierre del 8 de noviembre de 2026 (tarde)
+
+- Rama actual `sms`, árbol limpio, sin subir: Área 5, etapa 2b parte 1 hecha (commits
+  `2a31dca` a este cierre). `main` sigue en `c83707f`.
+- Nada que compilar: `out/` tiene la compilación de las 19:07 del 8/11, igual al código
+  de `sms` (el motor con `archived`).
+- Fame: motor nuevo (19:07, sin `pair_qr`) en `/data/local/tmp/oldiechat-engine/`, con
+  la sesión en `data/`; conecta. Respaldo del motor viejo borrado. Quedan
+  `sms-bridge.sh` (versión de la parte 1) y el marcador `sms-bridge-993359016`. SMS
+  falsos (`_id` > 87), ayudante, registros y `sms-bridge-sent` borrados. Motor y
+  puente detenidos. Core 2 sin tocar.
+- Falta: que el dueño escriba los textos de los marcadores (`[SIN NUEVOS]` ahora
+  también va solo, sin nombre, en `00`). Una prueba real de persona archivada, cuando
+  el dueño archive una en el principal.
+- Siguiente: Área 5, etapa 2b, parte 2.
+
 ## Qué sigue
 
-- Área 5, etapa 2b: parte 1 hecha (`00`, grupos, archivados, `[NO SE ENVIO]`,
-  contador en archivo); falta instalar el motor nuevo en el Fame y probar archivados.
+- Área 5, etapa 2b: parte 1 hecha y probada (`00`, grupos, archivados, `[NO SE ENVIO]`,
+  contador en archivo).
   Parte 2: modo conversación, informes de entrega, aviso de 14 días y medir cuántos
   SMS al mes usa una persona normal. `Quedan N SMS` se quitó. Se trabaja en `sms`, que ya tiene `main` y
   `motor`.
-- Instalar en el Fame el motor de `out/engine/` (sin `pair_qr`) y comprobar que
-  conecta.
 - Área 1, etapa 7: probar cuando aparezcan el cambio de nombre de grupo y las
   etiquetas `ubicacion` y `contacto`.
 - Decidir cuándo la rama `sms` se une a `main` y qué parte de la prueba se conserva.
