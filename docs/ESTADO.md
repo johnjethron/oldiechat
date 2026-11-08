@@ -252,13 +252,14 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 - `CLAUDE.md`: las dos contradicciones quedaron resueltas en `main` (`c819f8c`: Fame
   solo por ADB, sin Linux Mint).
-- Rama `sms` (5 commits sobre `ce9dd21`, **sin unir a `main`** al escribir esto; ya se
-  unieron las dos, ver Área 5): Área 5, etapa 0 hecha en el Fame solo por ADB. Su
+- Rama `sms` (5 commits sobre `ce9dd21`; recibió `main` y `motor`, pero **no está
+  unida a `main`**, ver Área 5): Área 5, etapa 0 hecha en el Fame solo por ADB. Su
   detalle está en la sección Área 5.
 
-## Área 5: OldieChat SMS (rama `sms`, no se une a `main`)
+## Área 5: OldieChat SMS (rama `sms`: ya tiene `main` y `motor`; todavía no se une a `main`)
 
-- `main` se unió dentro de `sms` el 7 de noviembre de 2026 (sin subir).
+- `main` (que ya incluía `motor`) se unió dentro de `sms` el 7 de noviembre de 2026
+  (`1a5e3b0`, sin subir). `sms` todavía no se une a `main`.
 - Etapa 0, hecha en el Fame solo por ADB: `scripts/sms-test.sh` lee el inbox cada
   2 s, responde a un número con un menú ficticio y envía con
   `cl.oldiechat.sms.SmsSend` (`player/`) como uid radio (1001); desde root sin
@@ -270,37 +271,35 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   `511a925` (cambios del dueño).
 - `CLAUDE.md` en `sms` tiene la regla del costo actualizada (`4ac518a`): dos líneas
   con SMS, 500 al mes cada una en uso normal y 1.000 en intenso, condiciones de las
-  cuatro compañías sin recomendar ninguna. **`main` todavía tiene la regla vieja**:
-  falta decidir si se copia esa línea a `main`.
+  cuatro compañías sin recomendar ninguna. `main` ya tiene la misma regla
+  (`CLAUDE.md` es igual en las dos ramas).
 - Nada que compilar ni probar: la etapa 1 es solo diseño.
 
-## Cierre del 7 de noviembre de 2026 (noche)
+## Cierre del 7 de noviembre de 2026 (noche, después de las uniones)
 
-- Rama de trabajo: `motor` (`main` + la etapa 7 y este cierre), sin subir. `main`
-  tiene 6 commits locales sin subir; el último, `d127578` (reglas de textos para
-  personas y de vinculación solo con código en `CLAUDE.md`), todavía no está en
-  `motor`. `sms` sin cambios.
-- Compilado el 7/11 a las 23:24 desde `fa100cb` (4 min 14 s, sin errores,
-  `build.log`): `out/engine/oldiechat-engine-armv7` al día y el paquete de la
-  terminal 0.2.4-dev rearmado (sin cambios de nchat).
+- Ramas, todas sin subir y con el árbol limpio: `main` en `c83707f` (unión de
+  `motor`, sin conflictos); `motor` en `30340c8` (no tiene `d127578` ni la unión,
+  ya no se usa); `sms` en `1a5e3b0` (unión de `main`, conflicto solo en este
+  archivo, resuelto juntando los dos textos). Rama actual: `sms`. `VERSION` es
+  `0.2.4-dev`.
+- `build.sh` pasó en `main` y en `sms` (sin errores en `build.log`); `engine/audio`
+  no cambió. Lo último compilado es `sms`, igual a `main` en código.
 - Fame: en `/data/local/tmp/oldiechat-engine/` están el motor (compilación de las
   23:03, con `pair_qr`), `glyphs.txt` y `data/` con la sesión vinculada de nuevo
   el 7/11 cerca de las 23:06 y el historial guardado. Motor detenido. Core 2 sin
-  tocar.
+  tocar. No se instaló nada en los teléfonos después de las uniones.
 - Falta instalar en el Fame el motor de `out/engine/` y probar que vincula y
   conecta igual sin `pair_qr`.
 
 ## Qué sigue
 
-- Área 5: la siguiente etapa la indica el dueño. El Fame se vincula como
-  dispositivo nuevo en el Área 1, etapa 7. Decidir si la regla del costo de
-  `CLAUDE.md` se copia a `main`.
+- Área 5, etapa 2: la indica el dueño; se trabaja en `sms`, que ya tiene `main` y
+  `motor`.
 - Instalar en el Fame el motor de `out/engine/` (sin `pair_qr`) y comprobar que
-  conecta; decidir si `motor` se une a `main` (y traer `d127578` a `motor`).
+  conecta.
 - Área 1, etapa 7: probar cuando aparezcan el cambio de nombre de grupo y las
   etiquetas `ubicacion` y `contacto`.
-- Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva;
-  Área 5, etapa 1 la indica el dueño.
+- Decidir cuándo la rama `sms` se une a `main` y qué parte de la prueba se conserva.
 - Área 3: etapas 1, 2 y 10 hechas y unidas a `main`. La etapa 3 (logo grande al
   iniciar) pasó a la app.
 - Pendientes de la terminal 0.2.4 (arriba): emoji y `glyphs.txt`, `phone-test.sh`
