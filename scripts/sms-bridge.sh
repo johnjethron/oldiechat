@@ -31,6 +31,7 @@ TMPDIR=/data/local/tmp
 N9=${NUM#"${NUM%?????????}"}          # se comparan los últimos 9 dígitos
 ME="${NUM#+}@s.whatsapp.net"          # chat propio, para -s
 HELLO="$D/sms-bridge-$N9"             # existe si ya se envió la bienvenida
+SENT="$D/sms-bridge-sent"             # horas de los SMS de la última hora (límite de 30)
 bs='\' nl='
 ' A=$(print '\001') B=$(print '\002') C=$(print '\003')
 log() { print -r -- "$(date '+%H:%M:%S') $*" >> "$LOG"; }
@@ -88,7 +89,7 @@ say() {  # envía $1 al dueño (siempre a NUM), con el límite de 30 por hora
   now=$(date +%s); k= n=0
   for x in $sent; do [ $((now - x)) -lt 3600 ] && { k="$k $x"; n=$((n + 1)); }; done; sent=$k
   [ $n -ge 30 ] && { log "límite de 30 SMS por hora: no se envió"; return; }
-  sent="$sent $now"; sept "$1"; : > "$HELLO"
+  sent="$sent $now"; print -r -- "$sent" > "$SENT"; sept "$1"; : > "$HELLO"
   if [ -n "$TEST" ]; then log "SMS septetos=$s: ${1//$nl/ | }"; return; fi
   N="$NUM" T="$1" CLASSPATH="$D/player.jar" su 1001 -c 'app_process /system/bin cl.oldiechat.sms.SmsSend "$N" "$T"' </dev/null
   log "SMS septetos=$s"
@@ -223,6 +224,7 @@ cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
   esac
 }
 
+[ -e "$SENT" ] && read -r sent < "$SENT"   # el límite sobrevive a un reinicio
 su -c "sh $0 --poll $$ $NUM" </dev/null |&
 echo "Puente SMS para $NUM (pid $$); registro en $LOG. Se detiene con Ctrl-C."
 while read -p -r k id l; do
