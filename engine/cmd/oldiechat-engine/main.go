@@ -8,7 +8,6 @@
 //	    Mantiene la sesión y habla por stdin/stdout con líneas JSON (una por
 //	    línea). Comandos que recibe:
 //	        {"cmd":"pair","phone":"56912345678"}   -> {"type":"pair_code","text":"ABCD-EFGH"}
-//	        {"cmd":"pair_qr"}                       -> {"type":"qr","text":"<código QR>"} (cada código nuevo)
 //	        {"cmd":"logout"}                        -> {"type":"logged_out"} y termina
 //	        {"cmd":"chats","kind":"people"}         -> {"type":"chats","chats":[{chat,name,time,unread}]} (o "groups")
 //	        {"cmd":"messages","chat":"<jid>"}       -> {"type":"messages","chat":"<jid>","messages":[...]} (nuevos desde la consulta anterior)
@@ -216,10 +215,6 @@ func run(o options) error {
 				emit(wa.Event{Type: "error", Error: err.Error()})
 			} else {
 				emit(wa.Event{Type: "pair_code", Text: code})
-			}
-		case "pair_qr":
-			if err := eng.PairQR(); err != nil {
-				emit(wa.Event{Type: "error", Error: err.Error()})
 			}
 		case "logout":
 			if err := eng.Logout(ctx); err != nil {

@@ -210,8 +210,11 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   mensajes de grupo guardados). Modo pantalla de `engine/glyphs`: los emoji sin
   línea R (👍🏽) y el selector de variante que queda tras un reemplazo (`<3` + U+FE0F)
   pasan tal cual; se decide en la app, según su fuente.
-- Sin probar: `pair_qr`, cambio de nombre de grupo y etiquetas `ubicacion` y
-  `contacto`.
+- Sin probar: cambio de nombre de grupo y etiquetas `ubicacion` y `contacto`.
+- Decisión del dueño: la app y el motor vinculan solo con el código de 8
+  caracteres, sin QR. La orden `pair_qr` se quitó a propósito; su código está en
+  el commit `f2b76b2`, por si WhatsApp deja de permitir el código. La terminal no
+  cambia: sigue vinculando con el QR de nchat.
 - Pendiente para el Área 1, etapa 5: la opción de días del historial reciente
   (`RecentSyncDaysLimit`), si la sincronización usa mucha memoria. Hoy el
   historial inicial trae unas 3 semanas, con tope de 50 mensajes por chat.

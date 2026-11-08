@@ -32,7 +32,7 @@ import (
 // Event es lo que el motor informa a la interfaz. Solo se llenan los campos que
 // corresponden a cada tipo.
 type Event struct {
-	Type     string  `json:"type"`              // connected, disconnected, logged_out, paired, qr, message, audio_ready, error
+	Type     string  `json:"type"`              // connected, disconnected, logged_out, paired, message, audio_ready, error
 	Chat     string  `json:"chat,omitempty"`    // JID del chat
 	Sender   string  `json:"sender,omitempty"`  // JID de quien envía
 	Name     string  `json:"name,omitempty"`    // nombre visible de quien envía
@@ -118,50 +118,26 @@ func (e *Engine) PairPhone(ctx context.Context, phone string) (string, error) {
 	if e.LoggedIn() {
 		return "", errors.New("wa: la sesión ya está vinculada")
 	}
-	qr := e.qr
-	if qr == nil {
-		return "", errors.New("wa: vinculación ya iniciada o falta Connect")
+	if e.qr == nil {
+		return "", errors.New("wa: falta Connect antes de PairPhone")
 	}
-	e.qr = nil
 	// whatsmeow necesita el primer evento del canal QR antes de pedir el código
 	select {
-	case item := <-qr:
+	case item := <-e.qr:
 		if item.Event != "code" {
 			return "", fmt.Errorf("wa: vinculación no disponible (%s)", item.Event)
 		}
 	case <-ctx.Done():
 		return "", ctx.Err()
 	}
-	go e.watchQR(qr, false)
-	return e.cli.PairPhone(ctx, phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
-}
-
-// PairQR emite un evento qr con cada código nuevo hasta vincular o hasta que
-// caduca. El código se escanea en Dispositivos vinculados del principal.
-func (e *Engine) PairQR() error {
-	if e.LoggedIn() {
-		return errors.New("wa: la sesión ya está vinculada")
-	}
-	qr := e.qr
-	if qr == nil {
-		return errors.New("wa: vinculación ya iniciada o falta Connect")
-	}
-	e.qr = nil
-	go e.watchQR(qr, true)
-	return nil
-}
-
-func (e *Engine) watchQR(qr <-chan whatsmeow.QRChannelItem, show bool) {
-	for item := range qr {
-		switch {
-		case item.Event == "code":
-			if show {
-				e.emit(Event{Type: "qr", Text: item.Code})
+	go func() {
+		for item := range e.qr {
+			if item.Event != "code" && item.Event != "success" {
+				e.emit(Event{Type: "error", Error: "vinculación: " + item.Event})
 			}
-		case item.Event != "success":
-			e.emit(Event{Type: "error", Error: "vinculación: " + item.Event})
 		}
-	}
+	}()
+	return e.cli.PairPhone(ctx, phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 }
 
 // Logout desvincula este dispositivo de la cuenta y borra la sesión guardada.
