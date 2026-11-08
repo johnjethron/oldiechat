@@ -16,6 +16,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -56,6 +57,7 @@ func Open(ctx context.Context, dataDir string, log waLog.Logger, emit func(Event
 	if log == nil {
 		log = waLog.Noop
 	}
+	store.DeviceProps.Os = proto.String("OldieChat") // nombre en Dispositivos vinculados
 	if err := os.MkdirAll(filepath.Join(dataDir, "media"), 0o700); err != nil {
 		return nil, err
 	}
