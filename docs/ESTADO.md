@@ -274,6 +274,48 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   cuatro compañías sin recomendar ninguna. `main` ya tiene la misma regla
   (`CLAUDE.md` es igual en las dos ramas).
 - Nada que compilar ni probar: la etapa 1 es solo diseño.
+- Etapa 2a, hecha y probada en el Fame el 8 de noviembre de 2026 (commits `ef4042e`
+  a `c5d689e`): `scripts/sms-bridge.sh` reemplaza a `sms-test.sh`. Comandos: llamada
+  perdida o `0` (menú de 9 personas con no leídos, sin grupos ni segunda página),
+  `n` (mensajes nuevos en 1 SMS; si no hay, `[SIN NUEVOS]`), `n texto`, texto solo
+  (a la última persona abierta o escrita) y `a`. Todo lo demás, incluidos `00`, `g`
+  y `gn` (etapa 2b), responde el menú. Silencio si el envío sale bien; el siguiente
+  menú trae `[OK] Nombre`. Respuestas siempre al número del dueño, GSM con
+  `--glyphs sms`, 30 SMS por hora. Opciones de prueba: `-t` (SMS al registro con
+  septetos) y `-s` (WhatsApp solo a Saved Messages).
+- Cómo corre: como shell (`adb shell sh /data/local/tmp/sms-bridge.sh [-t] [-s]
+  +569...`), con el motor como coproceso (proceso hijo unido por tuberías) en los
+  descriptores 3 y 4. Un solo `su` corre la parte root (`--poll`), que consulta
+  inbox y llamadas cada 2 s y pasa lo nuevo por otra tubería; termina sola si el
+  script muere. Envía con `su 1001` y `SmsSend`. El motor no puede ir con `su 2000`:
+  queda sin el grupo `inet` y sin red.
+- mksh R40 del Fame: sin `read -t`, sin `$'..'` en reemplazos, la barra invertida
+  escapa también dentro de patrones entre comillas, y el último comando de una
+  tubería corre en un subshell. El JSON se lee cambiando cada barra por un carácter
+  de control antes de cortar.
+- Aceptado para la 2a: sin `read -t`, si el motor se cuelga el script queda esperando.
+- Pruebas: con `-t -s`, 36 SMS falsos insertados con `content insert` (funciona en
+  4.1) y ya borrados, más una llamada perdida falsa, también borrada; todo pasó.
+  Prueba final real con `-s`: 4 SMS enviados (menú, `1`, menú con `[OK]`, `a`) y
+  `1 prueba` llegó a Saved Messages; cada respuesta salió 2-3 s después del SMS.
+  Memoria con el motor y el puente: MemFree 13 MB, Cached 199 MB, motor 13 MB RSS.
+- Anotado, sin arreglar: el contador de 30 por hora y `[OK]` están en memoria y se
+  pierden al reiniciar el puente. Un SMS con saltos de línea llega cortado a la
+  primera línea. No se probó `[NO SE ENVIO]` (envío rechazado por WhatsApp). Leer un
+  chat no lo marca como leído en WhatsApp (el motor no llama a `MarkRead`).
+- Llamadas: 2 de 4 no llegaron al módem (sin `MSG_INCOMING_CALL_IND` en el registro
+  de radio; el iPhone mostró "Llamada finalizada" enseguida). Pasó con y sin el
+  puente: parece intermitente, de la red.
+- El Fame se reinició solo a las 00:23 del 8 de noviembre (`reboot by NPON` en
+  `/data/log/RR_NPON.p`), sin causa encontrada; el chip no tiene PIN.
+- Textos por escribir (marcadores en `sms-bridge.sh`; GSM sin á í ó ú; el SMS
+  completo cabe en 160): `[BIENVENIDA]` hasta 60, primera línea de la primera
+  respuesta, con el logo; `[AYUDA]` hasta 160, con el logo; `[PIE]` hasta 25, última
+  línea del menú; `[OK]` hasta 10, va con el nombre; `[NO SE ENVIO]` hasta 25, con
+  el nombre; `[SIN NUEVOS]` hasta 25, con el nombre; `[SESION CERRADA]` hasta 60;
+  `Yo` hasta 8.
+- En el Fame quedan `sms-bridge.sh`, `player.jar`, el marcador de bienvenida
+  `sms-bridge-993359016` y, de la etapa 0, `sms-test.sh` y `sms-test.log`.
 
 ## Cierre del 7 de noviembre de 2026 (noche, después de las uniones)
 
@@ -293,7 +335,8 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Qué sigue
 
-- Área 5, etapa 2: la indica el dueño; se trabaja en `sms`, que ya tiene `main` y
+- Área 5, etapa 2b (2a hecha): menú con mensajes (`00`), grupos, modo conversación,
+  informes de entrega, aviso de 14 días y SMS al mes. Se trabaja en `sms`, que ya tiene `main` y
   `motor`.
 - Instalar en el Fame el motor de `out/engine/` (sin `pair_qr`) y comprobar que
   conecta.
@@ -318,7 +361,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 | `engine/` | motor Go: `audio/oggopus`, `netcfg`, `tz`, `wa`, `cmd/` |
 | `player/` | Java por `app_process`: reproductor, `GlyphProbe` y `SmsSend` |
 | `phone/` | lo que va al teléfono: `oldiechat.sh`, `audio.sh`, `install.sh`, ícono, `config/`, `fonts/`, `licenses/` |
-| `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.sh`, `check-go-version.sh`, `update-whatsmeow.sh`, `vendor-go.sh`, `sms-test.sh` |
+| `scripts/` | `phone-test.sh`, `glyphs.sh`/`glyphs.py`, `make-emoji-font.sh`, `make-icon.sh`, `check-go-version.sh`, `update-whatsmeow.sh`, `vendor-go.sh`, `sms-bridge.sh` |
 | `tests/data/` | audio de prueba |
 | `docs/` | este archivo, la arquitectura de la app y el puente SMS (`SMS_BRIDGE.md`) |
 | `work/`, `out/` | generados, fuera de git |
