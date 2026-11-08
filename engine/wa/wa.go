@@ -36,6 +36,7 @@ type Event struct {
 	ID      string `json:"id,omitempty"`      // ID del mensaje
 	Time    int64  `json:"time,omitempty"`    // segundos desde 1970
 	FromMe  bool   `json:"from_me,omitempty"` // enviado desde esta cuenta
+	Device  *uint16 `json:"device,omitempty"` // dispositivo que envía (0 = principal)
 	Text    string `json:"text,omitempty"`    // texto del mensaje
 	Audio   bool   `json:"audio,omitempty"`   // es una nota de voz o audio
 	Seconds uint32 `json:"seconds,omitempty"` // duración del audio
@@ -164,6 +165,7 @@ func (e *Engine) handleMessage(m *events.Message) {
 		ID:     m.Info.ID,
 		Time:   m.Info.Timestamp.Unix(),
 		FromMe: m.Info.IsFromMe,
+		Device: &m.Info.Sender.Device,
 	}
 	msg := m.Message
 	switch {
