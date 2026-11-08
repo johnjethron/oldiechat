@@ -301,8 +301,20 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   Memoria con el motor y el puente: MemFree 13 MB, Cached 199 MB, motor 13 MB RSS.
 - Anotado, sin arreglar: el contador de 30 por hora y `[OK]` están en memoria y se
   pierden al reiniciar el puente. Un SMS con saltos de línea llega cortado a la
-  primera línea. No se probó `[NO SE ENVIO]` (envío rechazado por WhatsApp). Leer un
+  primera línea. Leer un
   chat no lo marca como leído en WhatsApp (el motor no llama a `MarkRead`).
+- Etapa 2b, parte 1 (8 de noviembre de 2026, commits `2a31dca` y `de6b99a`):
+  `00` envía en 1 SMS lo nuevo de las 9 personas del menú, cada línea con su número
+  (`3 Ana: hola`), del más antiguo al más nuevo; si no cabe, quedan los más recientes;
+  sin nada nuevo, `[SIN NUEVOS]` solo. `00` cuenta como menú (fija los números). `g`:
+  menú de hasta 9 grupos con `[PIE]`; `gn`: los últimos 3 mensajes nuevos del grupo con
+  el nombre de pila de quien escribe (o su número); `gn texto` escribe al grupo y no
+  cambia la última persona. Probado en el Fame con `-t -s` y SMS falsos; los nombres en
+  grupos, con un JSON falso (no había mensajes nuevos de otros en grupos).
+  `[NO SE ENVIO] Nombre` probado con `-s` y el número `+56@993359016`: el chat propio
+  queda inválido y el motor responde `unknown server`; pasó con persona y grupo.
+  Ocultar archivados: pendiente, el motor no entrega el dato (whatsmeow lo guarda en
+  `ChatSettings`).
 - Llamadas: 2 de 4 no llegaron al módem (sin `MSG_INCOMING_CALL_IND` en el registro
   de radio; el iPhone mostró "Llamada finalizada" enseguida). Pasó con y sin el
   puente: parece intermitente, de la red.
@@ -343,7 +355,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - Fame: sesión vinculada en `/data/local/tmp/oldiechat-engine/data`, motor y puente
   detenidos (confirmado con `ps`). Llamadas reales 48, 49 y 50 en el registro de
   llamadas; SMS falsos y llamada falsa borrados. Core 2 sin tocar.
-- Falta probar: `[NO SE ENVIO]`. Falta que el dueño escriba los textos de los marcadores.
+- Falta que el dueño escriba los textos de los marcadores.
 
 ## Qué sigue
 
