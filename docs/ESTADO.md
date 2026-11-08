@@ -154,6 +154,17 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   es TermOne Plus. El README ya pide Atrás = "Envía TAB al terminal"; el Core 2
   quedó así.
 
+## Estado al cierre del 7 de noviembre de 2026
+
+- Rama actual: `main` (`usuarios` y `main` apuntan al mismo commit salvo
+  `CLAUDE.md`, que solo está en `main`). `main` va 12 commits por delante de
+  `origin/main`: nada se subió. `VERSION` es `0.2.4-dev`.
+- Compilado el 7/11 (4 min 5 s, sin errores) con `out/` al día; instalado en el
+  Core 2 y probado a mano. Nada sin compilar ni sin probar.
+- `CLAUDE.md` actualizado: 0.2.3 publicada, teléfonos (Fame solo ADB, Core 2 de
+  uso diario), TermOne Plus con Atrás en "Envía TAB al terminal", reglas de
+  terminal en mantenimiento y de publicar.
+
 ## Pendientes para la 0.2.4 (anotados, sin hacer)
 
 - Emoji: en el Core 2 salen a color y `glyphs.txt` es del Fame. Evaluar que
@@ -184,7 +195,11 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   Área 5, etapa 1 la indica el dueño.
 - Área 3: etapas 1, 2 y 10 hechas y unidas a `main`. La etapa 3 (logo grande al
   iniciar) pasó a la app.
-- Pendientes para la 0.2.4 (arriba), y después publicarla.
+- Pendientes de la terminal 0.2.4 (arriba): emoji y `glyphs.txt`, `phone-test.sh`
+  con el audio desde nchat, hora local en `audio.log`. Se unen a `main` como
+  0.2.4-dev; la 0.2.4 se publica solo si whatsmeow lo obliga o hace falta para
+  usuarios (regla en `CLAUDE.md`).
+- Decidir si la rama `sms` se une a `main`; Área 5, etapa 1 la indica el dueño.
 
 ## Archivos
 
