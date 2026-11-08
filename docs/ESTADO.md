@@ -85,7 +85,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - `work/nchat/.gotools` (caché Go de 255 MB, del 25/10) no lo crea `build.sh` y
   entra en el paquete de código fuente; revisar si se quita.
 
-## Área 3, etapa 1: seguridad de la sesión (rama `usuarios`, sin unir a `main`)
+## Área 3, etapa 1: seguridad de la sesión (rama `usuarios`, unida a `main`)
 
 - Commit `3470d64` (sobre `main`, 0.2.3). `home/` queda `root:root` con permisos
   700: `install.sh` aplica `chown 0:0` y `chmod 700`, y `oldiechat.sh` lo repite al
@@ -98,7 +98,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   No se entró a Saved Messages.
 - `install.sh` completo se probó en el Core 2 en la etapa 2.
 
-## Área 3, etapa 2: actualizar y respaldar (rama `usuarios`, sin unir a `main`)
+## Área 3, etapa 2: actualizar y respaldar (rama `usuarios`, unida a `main`)
 
 - Commits `f19cd38`, `047b5f3`, `c5f69d7` y `3ff81dd`. `VERSION` es `0.2.4-dev`;
   paquete compilado el 7 de noviembre de 2026 (4 min 6 s, sin errores) en
@@ -129,17 +129,43 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   archivados, salir, acceso directo, nota de voz y guía.
 - La copia del Fame (`home/`) y los respaldos del PC se borraron. El Fame no se
   vuelve a vincular por ahora: se usa solo por ADB para SMS.
-- `usuarios` se une a `main` al publicar la 0.2.4.
+- `usuarios` se unió a `main` por avance rápido el 7 de noviembre de 2026, sin
+  publicar (ver etapa 10).
 
-## Hallazgos del Core 2 (7 de noviembre de 2026, sin arreglar)
+## Área 3, etapa 10: formato en el Core 2 (rama `usuarios`, unida a `main`)
 
-- El formato se desarma cuando cambia el tamaño de la pantalla (al abrir o
-  cerrar el teclado): la guía y los bordes quedan dibujados con el tamaño
-  anterior y quedan restos de texto.
-- Los emoji salen a color. `glyphs.txt` es del Fame; revisar si uno generado
-  para el Core 2 con `scripts/glyphs.sh` arregla también los anchos.
+- Commits `d5dc8ae` y `b7947d6`. `VERSION` sigue en `0.2.4-dev`; compilada el
+  7 de noviembre de 2026 (4 min 5 s, sin errores). No hay nada sin compilar ni
+  sin probar. Unida a `main` por avance rápido, sin publicar ni subir.
+- Causa: en Android 4.4, SuperSU corre `su` por `daemonsu`, que le da a nchat
+  una terminal propia y le copia el tamaño de TermOne Plus solo al arrancar.
+  Al abrir o cerrar el teclado nchat seguía con el tamaño anterior (bordes y
+  guía viejos, y el toque para abrir el teclado caía en otra fila).
+- Parche 0014 (`src/uicontroller.cpp`, 16 líneas): si existe `OLDIECHAT_TTY`,
+  `GetKey` (la espera de 50 ms que nchat ya tiene) copia el tamaño de esa
+  terminal a la propia y nchat recibe `KEY_RESIZE`. `wsp` pasa
+  `OLDIECHAT_TTY=/proc/$$/fd/0`. Probado a mano en el Core 2: lista, guía y
+  abrir el teclado con dos toques.
+- `install.sh` se detiene si OldieChat está abierto (como `session.sh`).
+- Revisado por `ps` en el Core 2: con Vol. abajo + S, Atrás ("Envía TAB al
+  terminal") y "Cerrar ventana" no queda nada. Con Atrás en "Cerrar la actividad
+  y conservar las sesiones" (como estaba el Core 2) o al quitar TermOne Plus de
+  recientes, la sesión y nchat siguen vivos en segundo plano: no es `daemonsu`,
+  es TermOne Plus. El README ya pide Atrás = "Envía TAB al terminal"; el Core 2
+  quedó así.
+
+## Pendientes para la 0.2.4 (anotados, sin hacer)
+
+- Emoji: en el Core 2 salen a color y `glyphs.txt` es del Fame. Evaluar que
+  `install.sh` genere `glyphs.txt` en cada teléfono con `scripts/glyphs.sh`
+  (avisar si exige instalar algo más en el PC) y si se puede preferir la fuente
+  en blanco y negro sin agregar peso; si no, se queda a color.
+- `phone-test.sh`: probar el audio igual que lo lanza OldieChat, desde un nchat
+  que corre como root (habría detectado la restricción de Samsung).
 - `audio.log` anota la hora en UTC: `date` de Android no entiende la ruta de
   archivo que `oldiechat.sh` pone en `TZ`.
+- Al publicar: `VERSION` 0.2.4, `CHANGELOG.md`, recompilar, `install.sh` y
+  `phone-test.sh --sound` en el Core 2, y prueba a mano.
 
 ## Otras ramas
 
@@ -156,9 +182,9 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 - Decidir si la rama `sms` se une a `main` y qué parte de la prueba se conserva;
   Área 5, etapa 1 la indica el dueño.
-- Área 3: etapas 1 y 2 hechas en la rama `usuarios`; se une a `main` al publicar la
-  0.2.4. La etapa 3 (logo grande al iniciar) pasó a la app.
-- Hallazgos del Core 2 (arriba), sin arreglar.
+- Área 3: etapas 1, 2 y 10 hechas y unidas a `main`. La etapa 3 (logo grande al
+  iniciar) pasó a la app.
+- Pendientes para la 0.2.4 (arriba), y después publicarla.
 
 ## Archivos
 
