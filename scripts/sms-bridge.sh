@@ -2,12 +2,13 @@
 # sms-bridge.sh - puente de OldieChat SMS con WhatsApp (prototipo con root, Área 5, etapa 2a).
 #
 # Va en el teléfono junto a player.jar (player/build.sh); el motor ya vinculado
-# está en /data/local/tmp/oldiechat-engine/. Se ejecuta a mano con root:
+# está en /data/local/tmp/oldiechat-engine/. Se ejecuta a mano como shell (sin root):
 #   adb push scripts/sms-bridge.sh <player.jar> /data/local/tmp/
-#   adb shell su -c "sh /data/local/tmp/sms-bridge.sh [-t] [-s] <número del dueño con +56>"
+#   adb shell sh /data/local/tmp/sms-bridge.sh [-t] [-s] <número del dueño con +56>
 #   -t  no envía SMS: los escribe en sms-bridge.log con su largo en septetos
 #   -s  todo envío por WhatsApp va al chat propio del dueño (Saved Messages)
-# Como root solo corre lo de /system/bin; el motor corre como shell (uid 2000).
+# El motor corre como shell: su 2000 lo deja sin el grupo inet y sin red. Root (un
+# solo su) solo consulta inbox y llamadas, y su 1001 envía; los dos con /system/bin.
 # Sin read -t (mksh R40): si el motor se cuelga, el script queda esperando.
 # Diseño y comandos: docs/SMS_BRIDGE.md.
 
@@ -22,6 +23,7 @@ T_SESION='[SESION CERRADA]'
 T_YO='Yo'
 
 set -fU
+[ "$1" = --poll ] && { POLL=$2; shift 2; }   # parte root, ver abajo
 while :; do case $1 in -t) TEST=1; shift ;; -s) SELF=1; shift ;; *) break ;; esac; done
 NUM="${1:?uso: sms-bridge.sh [-t] [-s] <número>}"
 D="${0%/*}"; LOG="$D/sms-bridge.log"; E=/data/local/tmp/oldiechat-engine
@@ -33,17 +35,35 @@ bs='\' nl='
 ' A=$(print '\001') B=$(print '\002') C=$(print '\003')
 log() { print -r -- "$(date '+%H:%M:%S') $*" >> "$LOG"; }
 
-# Motor como coproceso; el filtro deja pasar solo respuestas y avisos de sesión.
-su 2000 -c "cd $E && exec ./oldiechat-engine run --data data --glyphs sms" 2>>"$D/sms-bridge-motor.log" |
+q() { content query --uri "$1" --projection "$2" --where "$3" --sort "_id ASC"; }
+top() { content query --uri "$1" --projection _id --sort "_id DESC" | while read -r l; do l=${l#*_id=}; print -r -- "${l%%,*}"; break; done; }
+
+if [ -n "$POLL" ]; then  # root: cada 2 s escribe "llamada <_id>" o "sms <_id> <texto>"; termina con el script
+  ls=$(top content://sms/inbox); lk=$(top content://call_log/calls); print "inicio ${ls:-0} ${lk:-0}"
+  while [ -d /proc/$POLL ]; do
+    while read -r l; do case $l in Row:*) r=${l#*_id=}; lk=${r%%,*}; print "llamada $lk" ;; esac; done <<EOF
+$(q content://call_log/calls _id:type "_id>${lk:-0} AND type=3 AND number LIKE '%$N9'")
+EOF
+    while read -r l; do case $l in Row:*) r=${l#*_id=}; ls=${r%%,*}; print -r -- "sms $ls ${r#*body=}" ;; esac; done <<EOF
+$(q content://sms/inbox _id:body "_id>${ls:-0} AND address LIKE '%$N9'")
+EOF
+    sleep 2
+  done
+  exit
+fi
+
+# Motor como coproceso en 3 y 4; el filtro deja pasar solo respuestas y avisos de sesión.
+(cd $E && exec ./oldiechat-engine run --data data --glyphs sms) 2>>"$D/sms-bridge-motor.log" |
   while read -r l; do
     case $l in '{"type":"message",'*|'{"type":"audio_ready",'*|'{"type":"error",'*'"id":'*) ;; *) print -r -- "$l" ;; esac
   done |&
-trap 'print -p "{\"cmd\":\"quit\"}"' EXIT
+exec 3>&p 4<&p
+trap 'print -u3 "{\"cmd\":\"quit\"}"' EXIT
 trap 'exit' INT TERM HUP
 
 ask() {  # envía la orden $1 y deja en R la respuesta de tipo $2 (o el error)
-  print -p -r -- "$1"
-  while read -p -r R; do
+  print -u3 -r -- "$1"
+  while read -u4 -r R; do
     case $R in "{\"type\":\"$2\""*|'{"type":"error"'*) break ;; '{"type":"logged_out"'*|'{"type":"need_pairing"'*) OUT=1 ;; esac
   done
   [ -n "$R" ] || { log "el motor terminó"; exit 1; }
@@ -144,25 +164,13 @@ cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
   esac
 }
 
-q() { content query --uri "$1" --projection "$2" --where "$3" --sort "_id ASC"; }
-top() { content query --uri "$1" --projection _id --sort "_id DESC" | while read -r l; do l=${l#*_id=}; print -r -- "${l%%,*}"; break; done; }
-
-ls=$(top content://sms/inbox); lk=$(top content://call_log/calls)
-log "inicio pid $$, sms _id>${ls:-0}, llamadas _id>${lk:-0}${TEST:+, prueba}${SELF:+, solo chat propio}"
+su -c "sh $0 --poll $$ $NUM" </dev/null |&
 echo "Puente SMS para $NUM (pid $$); registro en $LOG. Se detiene con Ctrl-C."
-
-while :; do
-  while read -r l; do
-    case $l in Row:*) ;; *) continue ;; esac
-    r=${l#*_id=}; lk=${r%%,*}; log "llamada perdida _id=$lk"; cmd ''
-  done <<EOF
-$(q content://call_log/calls _id:type "_id>${lk:-0} AND type=3 AND number LIKE '%$N9'")
-EOF
-  while read -r l; do
-    case $l in Row:*) ;; *) continue ;; esac
-    r=${l#*_id=}; ls=${r%%,*}; log "SMS _id=$ls"; cmd "${r#*body=}"
-  done <<EOF
-$(q content://sms/inbox _id:body "_id>${ls:-0} AND address LIKE '%$N9'")
-EOF
-  sleep 2
+while read -p -r k id l; do
+  case $k in
+    inicio) log "inicio pid $$, sms _id>$id, llamadas _id>$l${TEST:+, prueba}${SELF:+, solo chat propio}" ;;
+    llamada) log "llamada perdida _id=$id"; cmd '' ;;
+    sms) log "SMS _id=$id"; cmd "$l" ;;
+  esac
 done
+log "la consulta con root terminó"
