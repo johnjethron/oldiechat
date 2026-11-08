@@ -125,6 +125,11 @@ func (e *Engine) Messages(ctx context.Context, chat string) ([]Event, error) {
 	return list, err
 }
 
+// clearChats borra los chats y mensajes guardados (al cerrar la sesión).
+func (e *Engine) clearChats() {
+	_, _ = e.db.Exec(`DELETE FROM oc_message; DELETE FROM oc_chat`)
+}
+
 // setName guarda el nombre de un grupo.
 func (e *Engine) setName(chat, name string) {
 	_, _ = e.db.Exec(`INSERT INTO oc_chat (chat, name) VALUES (?, ?)

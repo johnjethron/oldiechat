@@ -166,7 +166,11 @@ func (e *Engine) watchQR(qr <-chan whatsmeow.QRChannelItem, show bool) {
 
 // Logout desvincula este dispositivo de la cuenta y borra la sesión guardada.
 func (e *Engine) Logout(ctx context.Context) error {
-	return e.cli.Logout(ctx)
+	err := e.cli.Logout(ctx)
+	if err == nil {
+		e.clearChats()
+	}
+	return err
 }
 
 // SendText envía un mensaje de texto y devuelve su ID.
@@ -196,6 +200,7 @@ func (e *Engine) handle(evt any) {
 	case *events.Disconnected:
 		e.emit(Event{Type: "disconnected"})
 	case *events.LoggedOut:
+		e.clearChats()
 		e.emit(Event{Type: "logged_out"})
 	case *events.PairSuccess:
 		e.emit(Event{Type: "paired", Sender: v.ID.ToNonAD().String()})
