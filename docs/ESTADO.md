@@ -314,8 +314,9 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   línea del menú; `[OK]` hasta 10, va con el nombre; `[NO SE ENVIO]` hasta 25, con
   el nombre; `[SIN NUEVOS]` hasta 25, con el nombre; `[SESION CERRADA]` hasta 60;
   `Yo` hasta 8.
-- En el Fame quedan `sms-bridge.sh`, `player.jar`, el marcador de bienvenida
-  `sms-bridge-993359016` y, de la etapa 0, `sms-test.sh` y `sms-test.log`.
+- En el Fame quedan `sms-bridge.sh`, `player.jar` y el marcador de bienvenida
+  `sms-bridge-993359016`. `sms-test.sh`, `sms-test.log` y los registros del puente
+  se borraron.
 
 ## Cierre del 7 de noviembre de 2026 (noche, después de las uniones)
 
@@ -332,6 +333,17 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   tocar. No se instaló nada en los teléfonos después de las uniones.
 - Falta instalar en el Fame el motor de `out/engine/` y probar que vincula y
   conecta igual sin `pair_qr`.
+
+## Cierre del 8 de noviembre de 2026 (madrugada)
+
+- Rama actual `sms`, árbol limpio, sin subir: Área 5, etapa 2a hecha (commits
+  `ef4042e` a `c871f21` y este cierre). `main` en `c83707f`, sin cambios hoy.
+- Nada que compilar: la 2a no tocó el motor ni `player/`. El motor del Fame sigue
+  siendo la compilación de las 23:03 del 7/11 (con `pair_qr`).
+- Fame: sesión vinculada en `/data/local/tmp/oldiechat-engine/data`, motor y puente
+  detenidos (confirmado con `ps`). Llamadas reales 48, 49 y 50 en el registro de
+  llamadas; SMS falsos y llamada falsa borrados. Core 2 sin tocar.
+- Falta probar: `[NO SE ENVIO]`. Falta que el dueño escriba los textos de los marcadores.
 
 ## Qué sigue
 
