@@ -299,8 +299,8 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   Prueba final real con `-s`: 4 SMS enviados (menú, `1`, menú con `[OK]`, `a`) y
   `1 prueba` llegó a Saved Messages; cada respuesta salió 2-3 s después del SMS.
   Memoria con el motor y el puente: MemFree 13 MB, Cached 199 MB, motor 13 MB RSS.
-- Anotado, sin arreglar: el contador de 30 por hora y `[OK]` están en memoria y se
-  pierden al reiniciar el puente. Un SMS con saltos de línea llega cortado a la
+- Anotado, sin arreglar: `[OK]` está en memoria y se pierde al reiniciar el puente
+  (decisión del dueño: queda así). Un SMS con saltos de línea llega cortado a la
   primera línea. Leer un
   chat no lo marca como leído en WhatsApp (el motor no llama a `MarkRead`).
 - Etapa 2b, parte 1 (8 de noviembre de 2026, commits `2a31dca` y `de6b99a`):
@@ -313,8 +313,13 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   grupos, con un JSON falso (no había mensajes nuevos de otros en grupos).
   `[NO SE ENVIO] Nombre` probado con `-s` y el número `+56@993359016`: el chat propio
   queda inválido y el motor responde `unknown server`; pasó con persona y grupo.
-  Ocultar archivados: pendiente, el motor no entrega el dato (whatsmeow lo guarda en
-  `ChatSettings`).
+  Archivados (`c9ebe78`): la orden `chats` del motor trae `"archived":true` en los
+  chats archivados (de `ChatSettings` de whatsmeow; la app lo usará para su pantalla de
+  archivados) y el puente los salta en el menú de personas, en `00` y en `g`; no hay
+  comando para verlos. Compilado el 8/11 a las 19:07 (`out/engine/`, sin errores), sin
+  instalar en el Fame ni probar: espera el visto bueno del dueño.
+  El límite de 30 SMS por hora se guarda en `sms-bridge-sent` (junto al script) y
+  sobrevive a un reinicio (`da51978`, probado con -t -s); `[OK]` sigue en memoria.
 - Llamadas: 2 de 4 no llegaron al módem (sin `MSG_INCOMING_CALL_IND` en el registro
   de radio; el iPhone mostró "Llamada finalizada" enseguida). Pasó con y sin el
   puente: parece intermitente, de la red.
@@ -359,8 +364,10 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Qué sigue
 
-- Área 5, etapa 2b (2a hecha): menú con mensajes (`00`), grupos, modo conversación,
-  informes de entrega, aviso de 14 días y SMS al mes. Se trabaja en `sms`, que ya tiene `main` y
+- Área 5, etapa 2b: parte 1 hecha (`00`, grupos, archivados, `[NO SE ENVIO]`,
+  contador en archivo); falta instalar el motor nuevo en el Fame y probar archivados.
+  Parte 2: modo conversación, informes de entrega, aviso de 14 días y medir cuántos
+  SMS al mes usa una persona normal. `Quedan N SMS` se quitó. Se trabaja en `sms`, que ya tiene `main` y
   `motor`.
 - Instalar en el Fame el motor de `out/engine/` (sin `pair_qr`) y comprobar que
   conecta.
