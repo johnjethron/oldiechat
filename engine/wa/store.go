@@ -84,8 +84,7 @@ func (e *Engine) Chats(ctx context.Context, kind string) ([]Chat, error) {
 			// el nombre del grupo se pide una vez al servidor y queda guardado
 			if info, err := e.cli.GetGroupInfo(ctx, jid); err == nil {
 				list[i].Name = info.Name
-				_, _ = e.db.ExecContext(ctx, `INSERT INTO oc_chat (chat, name) VALUES (?, ?)
-					ON CONFLICT (chat) DO UPDATE SET name = excluded.name`, list[i].Chat, info.Name)
+				e.setName(list[i].Chat, info.Name)
 			}
 		}
 	}
@@ -124,6 +123,12 @@ func (e *Engine) Messages(ctx context.Context, chat string) ([]Event, error) {
 	_, err = e.db.ExecContext(ctx, `INSERT INTO oc_chat (chat, seen) VALUES (?, ?)
 		ON CONFLICT (chat) DO UPDATE SET seen = MAX(seen, excluded.seen)`, chat, last)
 	return list, err
+}
+
+// setName guarda el nombre de un grupo.
+func (e *Engine) setName(chat, name string) {
+	_, _ = e.db.Exec(`INSERT INTO oc_chat (chat, name) VALUES (?, ?)
+		ON CONFLICT (chat) DO UPDATE SET name = excluded.name`, chat, name)
 }
 
 // personName busca el nombre en la agenda del principal; si no está, el número.

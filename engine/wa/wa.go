@@ -182,9 +182,10 @@ func (e *Engine) SendText(ctx context.Context, chat, text string) (string, error
 	return resp.ID, nil
 }
 
-// Close desconecta la sesión.
+// Close desconecta la sesión y borra los audios descargados (como la terminal).
 func (e *Engine) Close() {
 	e.cli.Disconnect()
+	_ = os.RemoveAll(filepath.Join(e.dataDir, "media"))
 }
 
 func (e *Engine) handle(evt any) {
@@ -204,6 +205,10 @@ func (e *Engine) handle(evt any) {
 			if ev.Audio {
 				go e.prepareAudio(ev, v.Message.GetAudioMessage())
 			}
+		}
+	case *events.GroupInfo:
+		if v.Name != nil {
+			e.setName(v.JID.String(), v.Name.Name)
 		}
 	case *events.HistorySync:
 		for _, conv := range v.Data.GetConversations() {
@@ -263,6 +268,10 @@ func (e *Engine) toEvent(m *events.Message) (Event, bool) {
 		}
 	case msg.GetStickerMessage() != nil:
 		ev.Text = "sticker"
+	case msg.GetLocationMessage() != nil || msg.GetLiveLocationMessage() != nil:
+		ev.Text = "ubicacion"
+	case msg.GetContactMessage() != nil || msg.GetContactsArrayMessage() != nil:
+		ev.Text = "contacto"
 	case msg.GetDocumentMessage() != nil:
 		d := msg.GetDocumentMessage()
 		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(d.GetFileName()), "."))
