@@ -16,9 +16,12 @@ Cortex-A9, root con SuperSU, conectado por ADB. Terminal en TermOne Plus con el
 teclado abierto: 53 columnas y 15 filas (`echo $COLUMNS $LINES`); la guía con el
 logo ocupa 13 filas (10 líneas, borde y margen). Desde el 7 de noviembre de 2026
 el Fame (serie 4d009ce074228000) está sin sesión y se usa solo por ADB para SMS;
-OldieChat vinculado está en el Samsung Galaxy Core 2 SM-G355H (serie
-4203ce4abc349100, Android 4.4.2, kernel 3.10, SELinux Enforcing, root con
-SuperSU, TermOne Plus 5.7.0/X). Con los dos conectados se usa `ANDROID_SERIAL`.
+el Samsung Galaxy Core 2 SM-G355H (serie 4203ce4abc349100) tenía la terminal
+vinculada en Android 4.4.2. Desde el 9 de noviembre de 2026 tiene LineageOS 15.1
+Go (Android 8.1, 32 bits) y es el teléfono de prueba de Android 8.1 (motor por ADB
+y la futura app); la terminal no se prueba ahí y el Android 4.4 con su sesión
+queda solo en el respaldo TWRP `~/Respaldos/core2-stock-oldiechat`. Detalle y
+prohibiciones en `CLAUDE.md`. Con los dos conectados se usa `adb -s` con la serie.
 Repositorio:
 github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
@@ -379,6 +382,15 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   también va solo, sin nombre, en `00`). Una prueba real de persona archivada, cuando
   el dueño archive una en el principal.
 - Siguiente: Área 5, etapa 2b, parte 2.
+
+## Cierre del 9 de noviembre de 2026
+
+- `main` en `7aa7761`: solo `CLAUDE.md`, la entrada del Core 2 pasa a LineageOS 15.1
+  Go (Android 8.1) como teléfono de prueba. Sin subir. `sms` no tiene ese commit;
+  lo recibe cuando se una con `main`.
+- Rama actual `sms`, sin cambios de código hoy. Nada que compilar ni probar.
+- Core 2 sin tocar por Claude. Fame igual que en el cierre anterior.
+- Siguiente: Área 5, etapa 2b, parte 2 (sin cambios).
 
 ## Qué sigue
 
