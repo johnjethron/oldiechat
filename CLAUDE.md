@@ -10,7 +10,14 @@ Usuario: la persona que quiere dejar el smartphone y prueba un dumbphone, o que 
 
 Teléfonos de prueba (con los dos conectados se usa ANDROID_SERIAL):
 - Samsung Galaxy Fame GT-S6810L (serie 4d009ce074228000): Android 4.1.2, kernel 3.0.15, ARMv7 Cortex-A9, 512 MB de RAM, con root (SuperSU), conectado por USB con ADB. Pantalla rota y sin táctil: se usa solo por ADB para pruebas de SMS, con chip Movistar prepago. Sin sesión de OldieChat desde el 07-11-2026. Android 4.1 no trae cp ni chown -R.
-- Samsung Galaxy Core 2 SM-G355H (serie 4203ce4abc349100): Android 4.4.2, kernel 3.10, SELinux Enforcing, ARMv7, 768 MB de RAM, solo 3G, con root (SuperSU). Teléfono de uso diario con la sesión de OldieChat; el comando /system/bin/wsp abre OldieChat. Versión mexicana, sin red Movistar, usa wifi.
+- Samsung Galaxy Core 2 SM-G355H (kanas), serie ADB 4203ce4abc349100. Usa siempre adb -s con la serie: suele haber dos teléfonos conectados.
+  - LineageOS 15.1 Go no oficial (Android 8.1, API 27, 32 bits). low_ram=true. Sin servicios de Google. Root con Magisk v30.7; OldieChat no depende de root.
+  - 768 MB de RAM (670 visibles), unos 1,4 GB libres, almacenamiento lento. Límite de 3 procesos en segundo plano (script de Magisk), zram de 256 MB, tema oscuro. Solo sirve la ranura SIM 1; por ahora sin chip, usa wifi.
+  - Uso: teléfono de prueba de Android 8.1 de 32 bits (motor por ADB y la futura app). La terminal no se prueba ahí. Es también el teléfono de uso diario del usuario.
+  - Android 4.4 original con la sesión de la terminal: solo en el respaldo TWRP ~/Respaldos/core2-stock-oldiechat. No abrir OldieChat terminal en el Core 2 con Lineage.
+  - Bug de la ROM: al reiniciar a veces se apaga; avisar al usuario para encenderlo. El ADB de TWRP no funciona.
+  - Prohibido en el Core 2: flashear o escribir en particiones (MODEM, WDSP, NV, EFS); cambiar ajustes del sistema; activar o desactivar paquetes; modificar el script de Magisk; desinstalar apps del usuario; tocar ~/Respaldos o ~/Descargas/core2. Solo se instala, actualiza, desinstala y depura lo de OldieChat.
+  - Regla: OldieChat no recomienda ni depende de una ROM. El Core 2 con Lineage reemplaza a un Android 8 original de 32 bits, solo para pruebas.
 - TermOne Plus: "Acción del botón ATRÁS" en "Envía TAB al terminal". Con otro valor, nchat queda vivo sin ventana.
 
 Equipo de compilación: PC de escritorio con CachyOS (shell fish). Proyecto en ~/Projects/OldieChat. Compilar con: time ./build.sh > build.log 2>&1. No borrar work/: guarda la caché de Go.
