@@ -48,7 +48,7 @@ EOF
     while read -r l; do case $l in Row:*) r=${l#*_id=}; ls=${r%%,*}; print -r -- "sms $ls ${r#*body=}" ;; esac; done <<EOF
 $(q content://sms/inbox _id:body "_id>${ls:-0} AND address LIKE '%$N9'")
 EOF
-    sleep 2
+    print tic; sleep 2
   done
   exit
 fi
@@ -110,7 +110,7 @@ load() {  # los 9 chats más recientes de tipo $1 en $2C1.. (chat), $2W1.. (nomb
 }
 
 menu() {  # hasta 9 chats de tipo $1 (prefijo $2) en 1 SMS; los números quedan fijos hasta el próximo menú
-  load "$1" "$2"
+  load "$1" "$2"; conv=
   pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
   m= i=0
   while [ $i -lt 9 ]; do
@@ -124,13 +124,13 @@ menu() {  # hasta 9 chats de tipo $1 (prefijo $2) en 1 SMS; los números quedan 
 }
 
 msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nuevo) y su hora en $2 t1..;
-          # quien escribe: el nombre de pila de $3, o en grupos ($3 vacío) el de cada mensaje
+          # quien escribe: el nombre de pila de $3, o en grupos ($3 vacío) el de cada mensaje; $4: sin los propios
   ask "{\"cmd\":\"messages\",\"chat\":\"$1\"}" messages
   J=${R#*'"messages":['}; n=0
   while :; do
     case $J in *'{"type":"message"'*) ;; *) break ;; esac
     J=${J#*'{"type":"message"'}; o=${J%%'{"type":"message"'*}
-    case $o in *'"from_me":true'*) who=$T_YO ;; *)
+    case $o in *'"from_me":true'*) [ -n "$4" ] && continue; who=$T_YO ;; *)
       who=$3; [ -n "$who" ] || { val name "$o"; who=$v; }
       [ -n "$who" ] || { val sender "$o"; who=${v%%[@:]*}; }
       who=${who%% *}; [ ${#who} -gt 8 ] && who=${who%"${who#????????}"} ;;
@@ -159,7 +159,7 @@ pack() {  # en t, las líneas de $1 desde la $2 hacia atrás (de la más nueva),
 
 open() {  # mensajes nuevos de la persona $1 en 1 SMS, los más recientes
   eval "ch=\$C$1 w=\$W$1"; [ -n "$ch" ] || { menu people; return; }
-  lastc=$ch lastw=$w
+  lastc=$ch lastw=$w conv=1 convq=$own
   msgs "$ch" M "$w"; pre
   [ $n -gt 0 ] || { say "$p$T_NADA $w"; return; }
   pack M $n 99; say "$p$t"
@@ -173,7 +173,7 @@ group() {  # los últimos 3 mensajes nuevos del grupo $1 en 1 SMS, con quien esc
 }
 
 news() {  # 00: lo nuevo de cada persona en 1 SMS, cada línea con su número de menú; si no cabe, lo más reciente
-  load people ""; pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
+  load people ""; conv=; pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
   i=0
   while [ $i -lt 9 ]; do
     i=$((i + 1)); eval "ch=\$C$i w=\$W$i u=\$U$i H$i=0"
@@ -204,9 +204,18 @@ send() {  # escribe $3 a $1 (nombre $2); silencio si sale bien
   esac
 }
 
+tick() {  # modo conversación: cada 20 s, lo nuevo de la última persona; termina con 10 min sin SMS del dueño
+  [ -n "$conv" ] || return; now=$(date +%s)
+  [ $((now - own)) -ge 600 ] && { conv=; log "fin del modo conversación"; return; }
+  [ $((now - convq)) -ge 20 ] || return; convq=$now
+  msgs "$lastc" M "$lastw" 1; [ $n -gt 0 ] || return
+  p=; pack M $n 99; say "$t"
+}
+
 cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
   b=${1%"${1##*[! ]}"}; b=${b#"${b%%[! ]*}"}; typeset -l lc="$b"
   [ -z "$OUT" ] || { say "$T_SESION"; return; }
+  own=$(date +%s)
   case $lc in
     ''|0) menu people ;;
     00) news ;;
@@ -219,8 +228,8 @@ cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
       if [ -n "$c" ]; then send "$c" "$w" "$x"; else menu groups G; fi ;;
     [1-9]' '*)
       eval "c=\$C${lc%% *} w=\$W${lc%% *}"; x=${b#?}; x=${x#"${x%%[! ]*}"}
-      if [ -n "$c" ]; then lastc=$c lastw=$w; send "$c" "$w" "$x"; else menu people; fi ;;
-    *) if [ -n "$lastc" ]; then send "$lastc" "$lastw" "$b"; else menu people; fi ;;
+      if [ -n "$c" ]; then lastc=$c lastw=$w conv=1 convq=$own; send "$c" "$w" "$x"; else menu people; fi ;;
+    *) if [ -n "$lastc" ]; then conv=1 convq=$own; send "$lastc" "$lastw" "$b"; else menu people; fi ;;
   esac
 }
 
@@ -232,6 +241,7 @@ while read -p -r k id l; do
     inicio) log "inicio pid $$, sms _id>$id, llamadas _id>$l${TEST:+, prueba}${SELF:+, solo chat propio}" ;;
     llamada) log "llamada perdida _id=$id"; cmd '' ;;
     sms) log "SMS _id=$id"; cmd "$l" ;;
+    tic) tick ;;
   esac
 done
 log "la consulta con root terminó"
