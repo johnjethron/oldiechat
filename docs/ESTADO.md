@@ -325,6 +325,35 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   está archivada); el salto de una persona archivada se probó con un JSON falso.
   El límite de 30 SMS por hora se guarda en `sms-bridge-sent` (junto al script) y
   sobrevive a un reinicio (`da51978`, probado con -t -s); `[OK]` sigue en memoria.
+- Etapa 2b, parte 2 (11 de noviembre de 2026, sin SMS reales por presupuesto). Pruebas
+  con `-t`, SMS falsos y un motor falso (script que responde `chats`, `messages` y `send`
+  con mensajes escritos a mano), en `/data/local/tmp/ft/` del Fame, ya borrado.
+  - Modo conversación (`8928b77`): al abrir (`n`) o escribir a una persona (`n texto`,
+    `texto`), cada 20 s se pide lo nuevo de esa persona y se reenvía sin los mensajes
+    propios; termina con 10 minutos sin SMS del dueño o con un menú (`0`, `00`, `g`).
+    La consulta root manda `tic` cada 2 s y eso marca el tiempo. Probado: reenvío,
+    propios saltados, `texto` en silencio, cierre por tiempo (acortado a 60 s en la
+    copia) y cierre con `0`. Si el dueño escribe sin abrir, lo pendiente de esa persona
+    llega en el siguiente ciclo.
+  - Aviso de enviado: `SmsSend` divide en partes, espera el aviso de enviado (60 s) y
+    escribe `enviado` o `error <código>`; pide también el informe de entrega y lo espera
+    10 s (`entregado`, `no entregado <estado>` o `sin informe de entrega`), solo para el
+    registro. Sin Context, pide los `PendingIntent` y registra el receptor directo en el
+    ActivityManager por reflexión, a nombre de `com.android.phone` (uid 1001). El puente
+    reintenta cada minuto un SMS con `error` y lo descarta a los 10 minutos; las fallas
+    no cuentan para el límite de 30. Mensajes del modo conversación: hasta 3 partes
+    (459 septetos) y `..` al cortar.
+  - Como uid 1001, Dalvik no puede crear la caché de un `player.jar` nuevo
+    (`/data/dalvik-cache`) y `app_process` se cae: la parte root del puente corre
+    `SmsSend` sin argumentos al arrancar, que solo crea la caché.
+  - Probado: `SmsSend` en el Fame en modo avión (radio apagada, sin enviar nada) con un
+    texto de 2 partes respondió `error 2` (radio apagada); el reintento, el descarte y el
+    mensaje de 459 septetos, con la copia del puente que lee el resultado de un archivo.
+  - Queda para cuando haya saldo: un envío real con `-s` (`enviado` y `entregado` en el
+    registro, que el teléfono del dueño una las 3 partes), saber si el informe de
+    entrega se cobra en la línea de la puerta de enlace (si se cobra, se quita), una
+    falla real sin señal y `SmsSend` en Android 8.1 (Core 2, la reflexión cambia de
+    firma entre versiones).
 - Llamadas: 2 de 4 no llegaron al módem (sin `MSG_INCOMING_CALL_IND` en el registro
   de radio; el iPhone mostró "Llamada finalizada" enseguida). Pasó con y sin el
   puente: parece intermitente, de la red.

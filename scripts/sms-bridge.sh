@@ -40,6 +40,8 @@ q() { content query --uri "$1" --projection "$2" --where "$3" --sort "_id ASC"; 
 top() { content query --uri "$1" --projection _id --sort "_id DESC" | while read -r l; do l=${l#*_id=}; print -r -- "${l%%,*}"; break; done; }
 
 if [ -n "$POLL" ]; then  # root: cada 2 s escribe "llamada <_id>" o "sms <_id> <texto>"; termina con el script
+  # SmsSend sin argumentos solo crea la caché dex de player.jar, que el uid 1001 no puede escribir
+  CLASSPATH="$D/player.jar" app_process /system/bin cl.oldiechat.sms.SmsSend >/dev/null 2>&1
   ls=$(top content://sms/inbox); lk=$(top content://call_log/calls); print "inicio ${ls:-0} ${lk:-0}"
   while [ -d /proc/$POLL ]; do
     while read -r l; do case $l in Row:*) r=${l#*_id=}; lk=${r%%,*}; print "llamada $lk" ;; esac; done <<EOF
@@ -85,14 +87,19 @@ sept() {  # septetos GSM de $1 en s: los caracteres extendidos valen 2
 
 pre() { p=; [ -e "$HELLO" ] || p="$T_BIENV$nl"; }
 
-say() {  # envía $1 al dueño (siempre a NUM), con el límite de 30 por hora
+say() {  # envía $1 al dueño (siempre a NUM), con el límite de 30 por hora; si no sale, queda en pend
   now=$(date +%s); k= n=0
   for x in $sent; do [ $((now - x)) -lt 3600 ] && { k="$k $x"; n=$((n + 1)); }; done; sent=$k
   [ $n -ge 30 ] && { log "límite de 30 SMS por hora: no se envió"; return; }
-  sent="$sent $now"; print -r -- "$sent" > "$SENT"; sept "$1"; : > "$HELLO"
-  if [ -n "$TEST" ]; then log "SMS septetos=$s: ${1//$nl/ | }"; return; fi
-  N="$NUM" T="$1" CLASSPATH="$D/player.jar" su 1001 -c 'app_process /system/bin cl.oldiechat.sms.SmsSend "$N" "$T"' </dev/null
-  log "SMS septetos=$s"
+  sept "$1"; : > "$HELLO"
+  if [ -n "$TEST" ]; then r=prueba; log "SMS septetos=$s: ${1//$nl/ | }"; else
+    r=$(N="$NUM" T="$1" CLASSPATH="$D/player.jar" su 1001 -c 'app_process /system/bin cl.oldiechat.sms.SmsSend "$N" "$T"' </dev/null 2>>"$LOG")
+    log "SMS septetos=$s: ${r//$nl/, }"
+  fi
+  case $r in
+    error*|'') [ "$pend" = "$1" ] || pendt=$now; pend=$1 pendr=$now ;;   # no salió: se reintenta cada minuto
+    *) sent="$sent $now"; print -r -- "$sent" > "$SENT"; [ "$pend" = "$1" ] && pend= ;;
+  esac
 }
 
 load() {  # los 9 chats más recientes de tipo $1 en $2C1.. (chat), $2W1.. (nombre) y $2U1.. (sin leer)
@@ -146,13 +153,14 @@ msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nue
 }
 
 pack() {  # en t, las líneas de $1 desde la $2 hacia atrás (de la más nueva), hasta $3 y lo que quepa con el prefijo p
-  t= j=$2 k=0
+          # en $4 septetos (160 si falta)
+  t= j=$2 k=0 z=${4:-160}
   while [ $j -gt 0 ] && [ $k -lt $3 ]; do
     eval "l=\$$1$j"; [ -n "$l" ] || break; j=$((j - 1)) k=$((k + 1))
     x=$l; [ -n "$t" ] && x="$l$nl$t"
-    sept "$p$x"; [ $s -le 160 ] && { t=$x; continue; }
+    sept "$p$x"; [ $s -le $z ] && { t=$x; continue; }
     [ -n "$t" ] && break
-    while [ $s -gt 158 ]; do [ $s -gt 170 ] && l=${l%??????????} || l=${l%?}; sept "$p$l"; done
+    while [ $s -gt $((z - 2)) ]; do [ $s -gt $((z + 10)) ] && l=${l%??????????} || l=${l%?}; sept "$p$l"; done
     t="$l.."; break
   done
 }
@@ -204,12 +212,16 @@ send() {  # escribe $3 a $1 (nombre $2); silencio si sale bien
   esac
 }
 
-tick() {  # modo conversación: cada 20 s, lo nuevo de la última persona; termina con 10 min sin SMS del dueño
-  [ -n "$conv" ] || return; now=$(date +%s)
+tick() {  # cada 2 s: reintento del SMS que no salió (cada minuto, hasta 10 min) y modo conversación
+  [ -n "$pend$conv" ] || return; now=$(date +%s)
+  if [ -n "$pend" ] && [ $((now - pendr)) -ge 60 ]; then
+    if [ $((now - pendt)) -ge 600 ]; then pend=; log "SMS descartado: 10 min sin salir"; else say "$pend"; fi
+  fi
+  [ -n "$conv" ] || return
   [ $((now - own)) -ge 600 ] && { conv=; log "fin del modo conversación"; return; }
   [ $((now - convq)) -ge 20 ] || return; convq=$now
   msgs "$lastc" M "$lastw" 1; [ $n -gt 0 ] || return
-  p=; pack M $n 99; say "$t"
+  p=; pack M $n 99 459; say "$t"   # hasta 3 partes de 153
 }
 
 cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
