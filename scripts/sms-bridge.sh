@@ -12,15 +12,25 @@
 # Sin read -t (mksh R40): si el motor se cuelga, el script queda esperando.
 # Diseño y comandos: docs/SMS_BRIDGE.md.
 
-# Textos: marcadores, los escribe el dueño (lista y largos en docs/ESTADO.md).
-T_BIENV='[BIENVENIDA]'
-T_AYUDA='[AYUDA]'
-T_PIE='[PIE]'
-T_OK='[OK]'
-T_NOENV='[NO SE ENVIO]'
-T_NADA='[SIN NUEVOS]'
-T_SESION='[SESION CERRADA]'
-T_MAIN='[ABRE WHATSAPP]'
+# Textos: los escribe el dueño (largos máximos en docs/ESTADO.md). GSM de 7 bits, sin tildes.
+LOGO=' o_o_o
+( ^_^ ) OldieChat'
+T_BIENV="$LOGO
+Dgtl Minimal es el camino :)"
+T_AYUDA="$LOGO
+0: menu
+1-9: abrir chat
+1-9 y texto: responder
+Texto solo: ultimo chat
+g: grupos
+g1-g9: igual que 1-9
+El uso del SMS depende de ti."
+T_PIE='--- g grupos  a ayuda ---'
+T_OK='Enviado a'                # + nombre
+T_NOENV='No se pudo enviar a'   # + nombre
+T_NADA='Nada nuevo'             # solo en 00; con nombre: "Nada nuevo: nombre"
+T_SESION='Sesion cerrada. Abre tu sesion en la app :)'
+T_MAIN='Abre WhatsApp o la sesion se cierra'
 T_YO='Yo'
 
 set -fU
@@ -95,7 +105,15 @@ pre() {  # inicio de la respuesta pedida: la bienvenida (una vez) y, desde el d�
   [ $((now - mt)) -ge 1036800 ] && [ $((now - warned)) -ge 86400 ] && { warned=$now; p="$p$T_MAIN$nl"; }
 }
 
+ok() { pre; [ -n "$okw" ] && p="$p$T_OK $okw$nl"; okw=; }   # pre y, si el último envío salió, "Enviado a"
+
+short() {  # en x, el nombre de pila de $1 hasta 8 letras (un número queda entero)
+  x=${1%% *}; case $x in *[!0-9]*) [ ${#x} -gt 8 ] && x=${x%"${x#????????}"} ;; esac
+}
+
 say() {  # envía $1 al dueño (siempre a NUM), con el límite de 30 por hora; si no sale, queda en pend
+          # $2: lleva el logo arriba si cabe en el mismo SMS
+  [ -n "$2" ] && case $1 in "$LOGO"*) ;; *) sept "$LOGO$nl$1"; [ $s -le 160 ] && set -- "$LOGO$nl$1" ;; esac
   now=$(date +%s); k= n=0
   for x in $sent; do [ $((now - x)) -lt 3600 ] && { k="$k $x"; n=$((n + 1)); }; done; sent=$k
   [ $n -ge 30 ] && { log "límite de 30 SMS por hora: no se envió"; return; }
@@ -110,7 +128,7 @@ say() {  # envía $1 al dueño (siempre a NUM), con el límite de 30 por hora; s
   esac
 }
 
-load() {  # los 9 chats más recientes de tipo $1 en $2C1.. (chat), $2W1.. (nombre) y $2U1.. (sin leer)
+load() {  # los 9 chats más recientes de tipo $1 en $2C1.. (chat), $2W1.. (nombre corto) y $2U1.. (sin leer)
   ask "{\"cmd\":\"chats\",\"kind\":\"$1\"}" chats
   J=${R#*'"chats":['}; i=0
   while [ $i -lt 9 ]; do
@@ -120,13 +138,22 @@ load() {  # los 9 chats más recientes de tipo $1 en $2C1.. (chat), $2W1.. (nomb
       J=${J#*'"unread":'}; u=${J%%[!0-9]*}
       case ${J%%\}*} in *'"archived":true'*) continue ;; esac ;;   # archivados: no van al menú
     esac
-    i=$((i + 1)); eval "$2C$i=\$ch $2W$i=\$v $2U$i=\$u"
+    i=$((i + 1)); eval "$2C$i=\$ch FN$i=\$v $2U$i=\$u"
+  done
+  # grupos: los primeros 8 caracteres; personas: el nombre de pila, con la inicial del apellido si dos quedan iguales
+  i=0; while [ $i -lt 9 ]; do i=$((i + 1)); eval "v=\$FN$i"
+    if [ -n "$2" ]; then x=$v; [ ${#x} -gt 8 ] && x=${x%"${x#????????}"}; x=${x%"${x##*[! ]}"}; else short "$v"; fi; eval "SN$i=\$x"; done
+  i=0; while [ $i -lt 9 ]; do i=$((i + 1)); eval "x=\$SN$i v=\$FN$i"
+    j=0; [ -z "$2" ] && [ -n "$x" ] && while [ $j -lt 9 ]; do j=$((j + 1)); eval "y=\$SN$j"
+      [ $j -ne $i ] && [ "$y" = "$x" ] && { y=${v#* }; y=${y#"${y%%[! ]*}"}; [ "$y" = "$v" ] || x="$x ${y%"${y#?}"}"; break; }
+    done
+    eval "$2W$i=\$x"
   done
 }
 
 menu() {  # hasta 9 chats de tipo $1 (prefijo $2) en 1 SMS; los números quedan fijos hasta el próximo menú
   load "$1" "$2"; conv=
-  pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
+  ok; h=$p
   m= i=0
   while [ $i -lt 9 ]; do
     eval "ch=\$$2C$((i + 1)) v=\$$2W$((i + 1)) u=\$$2U$((i + 1))"; [ -n "$ch" ] || break
@@ -135,7 +162,7 @@ menu() {  # hasta 9 chats de tipo $1 (prefijo $2) en 1 SMS; los números quedan 
     i=$((i + 1)); m="$m$l$nl"
   done
   while [ $i -lt 9 ]; do i=$((i + 1)); eval "$2C$i= $2W$i="; done
-  say "$h$m$T_PIE"
+  say "$h$m$T_PIE" l
 }
 
 msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nuevo) y su hora en $2 t1..;
@@ -148,7 +175,7 @@ msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nue
     case $o in *'"from_me":true'*) [ -n "$4" ] && continue; who=$T_YO ;; *)
       who=$3; [ -n "$who" ] || { val name "$o"; who=$v; }
       [ -n "$who" ] || { val sender "$o"; who=${v%%[@:]*}; }
-      who=${who%% *}; [ ${#who} -gt 8 ] && who=${who%"${who#????????}"} ;;
+      short "$who"; who=$x ;;
     esac
     val text "$o"
     case $o in *'"audio":true'*)
@@ -177,19 +204,19 @@ open() {  # mensajes nuevos de la persona $1 en 1 SMS, los más recientes
   eval "ch=\$C$1 w=\$W$1"; [ -n "$ch" ] || { menu people; return; }
   lastc=$ch lastw=$w conv=1 convq=$own
   msgs "$ch" M "$w"; pre
-  [ $n -gt 0 ] || { say "$p$T_NADA $w"; return; }
-  pack M $n 99; say "$p$t"
+  [ $n -gt 0 ] || { say "$p$T_NADA: $w" l; return; }
+  pack M $n 99; say "$p$t" l
 }
 
 group() {  # los últimos 3 mensajes nuevos del grupo $1 en 1 SMS, con quien escribe
   eval "ch=\$GC$1 w=\$GW$1"; [ -n "$ch" ] || { menu groups G; return; }
   msgs "$ch" M; pre
-  [ $n -gt 0 ] || { say "$p$T_NADA $w"; return; }
-  pack M $n 3; say "$p$t"
+  [ $n -gt 0 ] || { say "$p$T_NADA: $w" l; return; }
+  pack M $n 3; say "$p$t" l
 }
 
 news() {  # 00: lo nuevo de cada persona en 1 SMS, cada línea con su número de menú; si no cabe, lo más reciente
-  load people ""; conv=; pre; h=$p; [ -n "$okw" ] && h="$h$T_OK $okw$nl"; okw=
+  load people ""; conv=; ok; h=$p
   i=0
   while [ $i -lt 9 ]; do
     i=$((i + 1)); eval "ch=\$C$i w=\$W$i u=\$U$i H$i=0"
@@ -206,8 +233,15 @@ news() {  # 00: lo nuevo de cada persona en 1 SMS, cada línea con su número de
     eval "j=\$H$b"; eval "L$((30 - k))=\"$b \$P${b}_$j\" H$b=$((j - 1))"; k=$((k + 1))
   done
   eval "L$((30 - k))="
-  p=$h; [ $k -gt 0 ] || { say "$p$T_NADA"; return; }
-  pack L 30 99; say "$p$t"
+  p=$h; [ $k -gt 0 ] || { say "$p$T_NADA" l; return; }
+  pack L 30 99; say "$p$t" l
+}
+
+help() {  # a: la ayuda con el logo; si con lo de arriba no cabe, sin la última línea y después sin el logo
+  : > "$HELLO"; ok; x=$T_AYUDA   # la ayuda ya trae el logo: sin bienvenida
+  sept "$p$x"; [ $s -gt 160 ] && { x=${x%"$nl"*}; sept "$p$x"; }
+  [ $s -gt 160 ] && x=${x#"$LOGO$nl"}
+  say "$p$x"
 }
 
 send() {  # escribe $3 a $1 (nombre $2); silencio si sale bien
@@ -216,7 +250,7 @@ send() {  # escribe $3 a $1 (nombre $2); silencio si sale bien
   ask "{\"cmd\":\"send\",\"chat\":\"$c\",\"text\":\"$x\"}" sent
   case $R in
     '{"type":"sent"'*) okw=$2; log "WhatsApp enviado a $to" ;;
-    *) okw=; log "WhatsApp falló: $R"; pre; say "$p$T_NOENV $2" ;;
+    *) okw=; log "WhatsApp falló: $R"; pre; say "$p$T_NOENV $2" l ;;
   esac
 }
 
@@ -234,12 +268,12 @@ tick() {  # cada 2 s: reintento del SMS que no salió (cada minuto, hasta 10 min
 
 cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
   b=${1%"${1##*[! ]}"}; b=${b#"${b%%[! ]*}"}; typeset -l lc="$b"
-  [ -z "$OUT" ] || { say "$T_SESION"; return; }
+  [ -z "$OUT" ] || { say "$T_SESION" l; return; }
   own=$(date +%s)
   case $lc in
     ''|0) menu people ;;
     00) news ;;
-    a) : > "$HELLO"; say "$T_AYUDA" ;;   # la ayuda trae el logo: sin bienvenida
+    a) help ;;
     [1-9]) open "$lc" ;;
     g) menu groups G ;;
     g[1-9]) group "${lc#g}" ;;

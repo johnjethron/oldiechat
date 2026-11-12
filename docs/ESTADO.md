@@ -376,12 +376,26 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   puente: parece intermitente, de la red.
 - El Fame se reinició solo a las 00:23 del 8 de noviembre (`reboot by NPON` en
   `/data/log/RR_NPON.p`), sin causa encontrada; el chip no tiene PIN.
-- Textos por escribir (marcadores en `sms-bridge.sh`; GSM sin á í ó ú; el SMS
-  completo cabe en 160): `[BIENVENIDA]` hasta 60, primera línea de la primera
-  respuesta, con el logo; `[AYUDA]` hasta 160, con el logo; `[PIE]` hasta 25, última
-  línea del menú; `[OK]` hasta 10, va con el nombre; `[NO SE ENVIO]` hasta 25, con
-  el nombre; `[SIN NUEVOS]` hasta 25, con el nombre; `[SESION CERRADA]` hasta 60;
-  `Yo` hasta 8; `[ABRE WHATSAPP]` hasta 35, primera línea (después de la bienvenida).
+- Textos del dueño puestos en `sms-bridge.sh` (11 de noviembre de 2026, etapa 2b parte 2,
+  punto 5). Largo en septetos (los extendidos valen 2; el `^` del logo lo es): logo 26
+  (2 líneas); bienvenida con logo 55 (máx. 60); ayuda 158 (máx. 160); pie 25 (máx. 25);
+  `Enviado a` 9 (máx. 10) + nombre; `No se pudo enviar a` 19 (máx. 25) + nombre;
+  `Nada nuevo` 10, con `: nombre` hasta 20 (máx. 25); sesión cerrada 43 (máx. 60); `Yo`
+  2 (máx. 8); `Abre WhatsApp o la sesion se cierra` 35 (máx. 35).
+  - Logo: siempre en la bienvenida y la ayuda. En las demás respuestas pedidas (menús,
+    `00`, `n`, `gn`, no enviado, sesión cerrada) va arriba solo si cabe en el mismo SMS;
+    el menú se arma sin él, así que nunca deja fuera un chat. No va en los reenvíos del
+    modo conversación.
+  - Ayuda: lleva arriba el aviso de 14 días y `Enviado a` (como el menú y `00`); si no
+    cabe en 160, quita la última línea y después el logo.
+  - Nombres: en el menú de personas, el nombre de pila de hasta 8 letras (como en los
+    mensajes) y, si dos quedan iguales, la inicial del apellido (`Ana P`, `Ana M`); ese
+    nombre corto va también en `Enviado a`, `No se pudo enviar a` y `Nada nuevo:`. Un chat
+    sin nombre muestra el número entero. Grupos: los primeros 8 caracteres, sin espacios
+    al final.
+  - Probado con `-t -s`, SMS falsos (borrados) y el motor falso: bienvenida, ayuda
+    completa, sin la última línea y sin logo, menú lleno sin logo, desempate, número,
+    grupos, `gn`, `00`, no enviado y sesión cerrada. No se probó con nombres reales.
 - En el Fame quedan `sms-bridge.sh`, `player.jar` y el marcador de bienvenida
   `sms-bridge-993359016`. `sms-test.sh`, `sms-test.log` y los registros del puente
   se borraron.
@@ -424,8 +438,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   `sms-bridge.sh` (versión de la parte 1) y el marcador `sms-bridge-993359016`. SMS
   falsos (`_id` > 87), ayudante, registros y `sms-bridge-sent` borrados. Motor y
   puente detenidos. Core 2 sin tocar.
-- Falta: que el dueño escriba los textos de los marcadores (`[SIN NUEVOS]` ahora
-  también va solo, sin nombre, en `00`). Una prueba real de persona archivada, cuando
+- Falta: una prueba real de persona archivada, cuando
   el dueño archive una en el principal.
 - Siguiente: Área 5, etapa 2b, parte 2.
 
