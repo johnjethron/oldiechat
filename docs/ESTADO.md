@@ -362,15 +362,27 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
     arrancar, la terminal muestra hace cuántos días se usó el principal. Probado con el
     motor falso: aviso en el primer menú y no en el segundo; un mensaje propio del
     dispositivo 3 no cuenta; uno del dispositivo 0 actualiza la hora.
-  - SMS al mes de una persona normal (cálculo, no un mes real): tráfico real del dueño,
-    del historial del 7/11 (395 mensajes en 31 chats de personas en unas 3 semanas, ningún
-    chat recortado): unos 19 al día entre enviados y recibidos; grupos, casi nada. Con las
-    reglas probadas del puente (1 respuesta por comando, 0 al escribir, 1 SMS por tanda de
-    20 s en conversación): 2 revisiones con `00` (2 y 2), 10 respuestas (10 y 0), unas 6
-    tandas recibidas en conversación (0 y 6) y `g` día por medio (0,5 y 0,5): unos 12,5
-    SMS al día del dueño y 8,5 de la puerta de enlace, es decir, unos 375 y 255 al mes.
-    Con la llamada perdida en vez de `00`, el dueño baja 2 al día. Uso intenso (el doble):
-    unos 750 y 510. Confirma 500 al mes en cada línea para uso normal y 1.000 para intenso.
+  - `00` se quitó (cambio de diseño del dueño, 11/11): un `00` responde el menú para que no
+    vaya como texto a la última persona. `Nada nuevo` va siempre con nombre. Probado con
+    `-t -s`, motor falso y SMS falsos (borrados).
+  - SMS al mes de una persona normal, sin `00` (cálculo, no un mes real): tráfico real del
+    dueño, del historial del 7/11 (395 mensajes en 31 chats de personas en unas 3 semanas):
+    unos 19 al día entre enviados y recibidos. Por día: 2 revisiones con llamada perdida
+    (0 y 2), abrir 2 chats en cada una (4 y 4), 10 respuestas (10 y 0), unas 6 tandas
+    recibidas en conversación (0 y 6) y `g` y `gn` día por medio (1 y 1): 15 SMS al día del
+    dueño y 13 de la puerta de enlace, unos 450 y 390 al mes. Abriendo 3 chats por
+    revisión: 510 y 450. Uso intenso (el doble): 900 y 780. Tabla de `SMS_BRIDGE.md`
+    actualizada.
+  - Pérdida de mensajes (revisado, sin código): `messages` del motor marca como consultado
+    todo lo que devuelve (`oc_chat.seen` pasa al `seq` más alto). Se pierde lo que no entra
+    en la respuesta: en `n`, los más antiguos que no caben en 160; en `gn`, todo menos los
+    3 últimos; en conversación, lo que pasa de 459; y en los tres, todo si el SMS no sale
+    (descartado a los 10 minutos). Propuesta: `messages` devuelve el `seq` de cada mensaje
+    y no marca nada; una orden nueva `seen` (chat y `seq`) marca hasta ese mensaje. El
+    puente arma la respuesta del más antiguo al más nuevo y, cuando el SMS sale, manda
+    `seen` con el último que entró. Lo que no cupo sigue en el `(k)` del menú (el motor ya
+    cuenta los no leídos después de `seen`) y llega en el siguiente `n`, `gn` o tanda de
+    conversación. Necesita recompilar e instalar el motor. Pendiente de decisión del dueño.
 - Llamadas: 2 de 4 no llegaron al módem (sin `MSG_INCOMING_CALL_IND` en el registro
   de radio; el iPhone mostró "Llamada finalizada" enseguida). Pasó con y sin el
   puente: parece intermitente, de la red.

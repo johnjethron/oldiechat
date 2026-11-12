@@ -28,7 +28,7 @@ El uso del SMS depende de ti."
 T_PIE='--- g grupos  a ayuda ---'
 T_OK='Enviado a'                # + nombre
 T_NOENV='No se pudo enviar a'   # + nombre
-T_NADA='Nada nuevo'             # solo en 00; con nombre: "Nada nuevo: nombre"
+T_NADA='Nada nuevo'             # + ": nombre"
 T_SESION='Sesion cerrada. Abre tu sesion en la app :)'
 T_MAIN='Abre WhatsApp o la sesion se cierra'
 T_YO='Yo'
@@ -165,7 +165,7 @@ menu() {  # hasta 9 chats de tipo $1 (prefijo $2) en 1 SMS; los números quedan 
   say "$h$m$T_PIE" l
 }
 
-msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nuevo) y su hora en $2 t1..;
+msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nuevo);
           # quien escribe: el nombre de pila de $3, o en grupos ($3 vacío) el de cada mensaje; $4: sin los propios
   ask "{\"cmd\":\"messages\",\"chat\":\"$1\"}" messages
   J=${R#*'"messages":['}; n=0
@@ -182,8 +182,7 @@ msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nue
       x=${o#*'"seconds":'}; x=${x%%[!0-9]*}; x=${x:-0}; mm=$((x / 60)) ss=$((x % 60))
       [ $mm -lt 10 ] && mm=0$mm; [ $ss -lt 10 ] && ss=0$ss; v="audio $mm.$ss" ;;
     esac
-    x=${o#*'"time":'}; x=${x%%[!0-9]*}
-    n=$((n + 1)); eval "$2$n=\"\$who: \$v\" $2t$n=\${x:-0}"
+    n=$((n + 1)); eval "$2$n=\"\$who: \$v\""
   done
 }
 
@@ -213,28 +212,6 @@ group() {  # los últimos 3 mensajes nuevos del grupo $1 en 1 SMS, con quien esc
   msgs "$ch" M; pre
   [ $n -gt 0 ] || { say "$p$T_NADA: $w" l; return; }
   pack M $n 3; say "$p$t" l
-}
-
-news() {  # 00: lo nuevo de cada persona en 1 SMS, cada línea con su número de menú; si no cabe, lo más reciente
-  load people ""; conv=; ok; h=$p
-  i=0
-  while [ $i -lt 9 ]; do
-    i=$((i + 1)); eval "ch=\$C$i w=\$W$i u=\$U$i H$i=0"
-    [ "$u" -gt 0 ] && { msgs "$ch" P${i}_ "$w"; eval "H$i=\$n"; }
-  done
-  k=0   # mezcla de la más nueva a la más antigua, en L30 hacia abajo
-  while [ $k -lt 25 ]; do
-    b=0 bt=-1 i=0
-    while [ $i -lt 9 ]; do
-      i=$((i + 1)); eval "j=\$H$i"; [ $j -gt 0 ] || continue
-      eval "x=\$P${i}_t$j"; [ $x -gt $bt ] && b=$i bt=$x
-    done
-    [ $b -gt 0 ] || break
-    eval "j=\$H$b"; eval "L$((30 - k))=\"$b \$P${b}_$j\" H$b=$((j - 1))"; k=$((k + 1))
-  done
-  eval "L$((30 - k))="
-  p=$h; [ $k -gt 0 ] || { say "$p$T_NADA" l; return; }
-  pack L 30 99; say "$p$t" l
 }
 
 help() {  # a: la ayuda con el logo; si con lo de arriba no cabe, sin la última línea y después sin el logo
@@ -271,8 +248,7 @@ cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
   [ -z "$OUT" ] || { say "$T_SESION" l; return; }
   own=$(date +%s)
   case $lc in
-    ''|0) menu people ;;
-    00) news ;;
+    ''|0|00) menu people ;;   # 00 ya no existe: menú, para que no vaya como texto
     a) help ;;
     [1-9]) open "$lc" ;;
     g) menu groups G ;;

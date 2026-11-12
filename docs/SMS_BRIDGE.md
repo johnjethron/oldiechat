@@ -93,7 +93,7 @@ externo. OldieChat no tiene servidor: el motor habla con WhatsApp y la app con l
   nuevo de esa persona, juntando 20 s. Termina con 10 minutos sin SMS del dueño,
   con otro menú o al abrir otra persona.
 - Si el texto empieza con número, el dueño escribe antes el número de la persona
-  (`n texto`). Lo mismo para un texto que sea solo `0`, `00`, `a` o `g`.
+  (`n texto`). Lo mismo para un texto que sea solo `0`, `a` o `g`. Un `00` responde el menú (el comando se quitó el 11-11-2026).
 
 ## 7. Mínimo cobro
 
@@ -103,7 +103,6 @@ tabla de símbolos). Las letras valen en mayúscula o minúscula:
 | Envía el dueño | Recibe | SMS dueño | SMS puerta |
 | --- | --- | --- | --- |
 | llamada perdida o `0` | menú: hasta 9 personas, `n Nombre (sin leer)` | 0 o 1 | 1 |
-| `00` | menú con mensajes: solo personas con no leídos, con su último mensaje recortado | 1 | 1 a 2 |
 | `n` | mensajes sin leer de n (o los 3 últimos), 1 SMS | 1 | 1 |
 | `n texto` / `texto` | nada si sale bien | 1 | 0 |
 | `g`, `gn`, `gn texto` | sección 5 | 1 | 1 o 0 |
@@ -125,12 +124,11 @@ Estimación mensual (30 días):
 | Uso | Por día | SMS dueño/mes | SMS puerta/mes |
 | --- | --- | --- | --- |
 | Ligero | 1 revisión: menú, abre 1 chat, 1 respuesta | 60 | 60 |
-| Normal | 2 revisiones (menú, abre 2, responde 2), 1 conversación de 10 min (5 y 5), grupos día por medio | 420 | 390 |
-| Intenso | el doble del normal | 840 | 780 |
+| Normal | 2 revisiones (llamada perdida, abre 2), 10 respuestas, 6 tandas recibidas en conversación, `g` y `gn` día por medio | 450 | 390 |
+| Intenso | el doble del normal | 900 | 780 |
 
 Son dos líneas con SMS: la del teléfono cliente (columna dueño) y la de la puerta
-de enlace. Uso normal: 500 SMS en cada una. Uso intenso: 1.000 en cada una. Usar `00` en vez de
-abrir chats uno por uno baja una revisión de 4+3 a 3+2 SMS. La puerta de enlace
+de enlace. Uso normal: 500 SMS en cada una. Uso intenso: 1.000 en cada una. La puerta de enlace
 cuenta lo enviado en el mes y agrega `Quedan N SMS` en la respuesta pedida cuando quedan 50.
 
 ## 8. Las 5 causas de "se siente raro"
@@ -138,7 +136,7 @@ cuenta lo enviado en el mes y agrega `Quedan N SMS` en la respuesta pedida cuand
 | Causa | Respuesta del diseño |
 | --- | --- |
 | Hablas con un menú | Los mensajes llegan con el nombre y se responden escribiendo; el menú aparece solo si se pide. |
-| Cada paso cuesta | Llamada perdida gratis, silencio si sale bien, empaquetar, `00`. |
+| Cada paso cuesta | Llamada perdida gratis, silencio si sale bien, empaquetar. |
 | Todo llega del mismo número | Nombre al inicio de cada mensaje; el README pide guardar el número como "WhatsApp". |
 | Esperas sin saber | Todo error se responde; la llamada suena si la puerta de enlace tiene señal; si no llega el menú en 1 minuto, está cerrada o sin red (README). |
 | Hay que recordar comandos | 4 formas: número, texto, `g` y `a`; la última línea del menú las recuerda; `a` cabe en 1 SMS y se puede guardar como plantilla. |
