@@ -463,13 +463,32 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - Core 2 sin tocar por Claude. Fame igual que en el cierre anterior.
 - Siguiente: Área 5, etapa 2b, parte 2 (sin cambios).
 
+## Cierre del 11 de noviembre de 2026
+
+- Rama actual `sms`, árbol limpio, sin subir: Área 5, etapa 2b parte 2 hecha (commits
+  `8928b77` a `32f526f` y este cierre). `main` sigue en `7aa7761`. Detalle en la
+  sección Área 5.
+- Hecho y probado sin SMS reales: modo conversación, `SmsSend` en partes con aviso de
+  enviado y reintento, aviso de 14 días, textos del dueño con logo y nombres cortos,
+  `00` quitado (responde el menú) y estimación mensual sin `00` (unos 450 SMS del dueño
+  y 390 de la puerta de enlace al mes en uso normal).
+- Sin compilar: `out/` no tiene el `player.jar` nuevo (`SmsSend`); el del Fame se compiló
+  aparte con `player/build.sh`. El motor no cambió (`out/engine/` de las 19:07 del 8/11
+  sigue al día). La próxima vez que corra `build.sh` en `sms`, el paquete de la terminal
+  lleva el `player.jar` nuevo (el reproductor no cambió).
+- Fame: en `/data/local/tmp/` están `sms-bridge.sh` (versión de `32f526f`), `player.jar`
+  nuevo con su caché dex y el marcador `sms-bridge-993359016`. SMS falsos, registros,
+  `sms-bridge-sent`, `sms-bridge-main` y `ft/` borrados. Modo avión apagado, pantalla
+  sin "siempre encendida". Motor y puente detenidos. Core 2 sin tocar.
+- Falta probar con saldo: envío real con `-s`, si el informe de entrega se cobra, falla
+  real sin señal y `SmsSend` en Android 8.1.
+
 ## Qué sigue
 
-- Área 5, etapa 2b: parte 1 hecha y probada (`00`, grupos, archivados, `[NO SE ENVIO]`,
-  contador en archivo).
-  Parte 2: modo conversación, informes de entrega, aviso de 14 días y medir cuántos
-  SMS al mes usa una persona normal. `Quedan N SMS` se quitó. Se trabaja en `sms`, que ya tiene `main` y
-  `motor`.
+- Área 5, etapa 2b: partes 1 y 2 hechas. Decisión pendiente del dueño: la propuesta para
+  que no se pierdan los mensajes que no caben (orden `seen` en el motor; sección Área 5),
+  y si `gn` entrega lo pendiente de a poco o sigue con los 3 últimos. Se trabaja en
+  `sms`, que ya tiene `main` y `motor`.
 - Área 1, etapa 7: probar cuando aparezcan el cambio de nombre de grupo y las
   etiquetas `ubicacion` y `contacto`.
 - Decidir cuándo la rama `sms` se une a `main` y qué parte de la prueba se conserva.
