@@ -20,6 +20,7 @@ T_OK='[OK]'
 T_NOENV='[NO SE ENVIO]'
 T_NADA='[SIN NUEVOS]'
 T_SESION='[SESION CERRADA]'
+T_MAIN='[ABRE WHATSAPP]'
 T_YO='Yo'
 
 set -fU
@@ -32,6 +33,7 @@ N9=${NUM#"${NUM%?????????}"}          # se comparan los últimos 9 dígitos
 ME="${NUM#+}@s.whatsapp.net"          # chat propio, para -s
 HELLO="$D/sms-bridge-$N9"             # existe si ya se envió la bienvenida
 SENT="$D/sms-bridge-sent"             # horas de los SMS de la última hora (límite de 30)
+MAIN="$D/sms-bridge-main"             # hora del último mensaje enviado desde el principal (aviso de 14 días)
 bs='\' nl='
 ' A=$(print '\001') B=$(print '\002') C=$(print '\003')
 log() { print -r -- "$(date '+%H:%M:%S') $*" >> "$LOG"; }
@@ -58,7 +60,8 @@ fi
 # Motor como coproceso en 3 y 4; el filtro deja pasar solo respuestas y avisos de sesión.
 (cd $E && exec ./oldiechat-engine run --data data --glyphs sms) 2>>"$D/sms-bridge-motor.log" |
   while read -r l; do
-    case $l in '{"type":"message",'*|'{"type":"audio_ready",'*|'{"type":"error",'*'"id":'*) ;; *) print -r -- "$l" ;; esac
+    case $l in '{"type":"message",'*'"from_me":true,"device":0'[!0-9]*) print -r -- "$l" ;;   # del principal
+      '{"type":"message",'*|'{"type":"audio_ready",'*|'{"type":"error",'*'"id":'*) ;; *) print -r -- "$l" ;; esac
   done |&
 exec 3>&p 4<&p
 trap 'print -u3 "{\"cmd\":\"quit\"}"' EXIT
@@ -67,7 +70,9 @@ trap 'exit' INT TERM HUP
 ask() {  # envía la orden $1 y deja en R la respuesta de tipo $2 (o el error)
   print -u3 -r -- "$1"
   while read -u4 -r R; do
-    case $R in "{\"type\":\"$2\""*|'{"type":"error"'*) break ;; '{"type":"logged_out"'*|'{"type":"need_pairing"'*) OUT=1 ;; esac
+    case $R in "{\"type\":\"$2\""*|'{"type":"error"'*) break ;; '{"type":"logged_out"'*|'{"type":"need_pairing"'*) OUT=1 ;;
+      '{"type":"message"'*) mt=${R#*'"time":'}; mt=${mt%%[!0-9]*}; print $mt > "$MAIN" ;;
+    esac
   done
   [ -n "$R" ] || { log "el motor terminó"; exit 1; }
   # una barra invertida del JSON pasa a A; \\ queda en C y \" en B
@@ -85,7 +90,10 @@ sept() {  # septetos GSM de $1 en s: los caracteres extendidos valen 2
   typeset e y; s=${#1}; for e in '^' '{' '}' '[' ']' '~' '|' '€' "$bs"; do y=${1//"$e"/}; s=$((s + ${#1} - ${#y})); done
 }
 
-pre() { p=; [ -e "$HELLO" ] || p="$T_BIENV$nl"; }
+pre() {  # inicio de la respuesta pedida: la bienvenida (una vez) y, desde el día 12 sin usar el principal, el aviso (una vez al día)
+  p=; [ -e "$HELLO" ] || p="$T_BIENV$nl"; now=$(date +%s)
+  [ $((now - mt)) -ge 1036800 ] && [ $((now - warned)) -ge 86400 ] && { warned=$now; p="$p$T_MAIN$nl"; }
+}
 
 say() {  # envía $1 al dueño (siempre a NUM), con el límite de 30 por hora; si no sale, queda en pend
   now=$(date +%s); k= n=0
@@ -246,8 +254,9 @@ cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
 }
 
 [ -e "$SENT" ] && read -r sent < "$SENT"   # el límite sobrevive a un reinicio
+[ -e "$MAIN" ] && read -r mt < "$MAIN"; [ -n "$mt" ] || { mt=$(date +%s); print $mt > "$MAIN"; }; warned=0
 su -c "sh $0 --poll $$ $NUM" </dev/null |&
-echo "Puente SMS para $NUM (pid $$); registro en $LOG. Se detiene con Ctrl-C."
+echo "Puente SMS para $NUM (pid $$); principal usado hace $((($(date +%s) - mt) / 86400)) días; registro en $LOG. Se detiene con Ctrl-C."
 while read -p -r k id l; do
   case $k in
     inicio) log "inicio pid $$, sms _id>$id, llamadas _id>$l${TEST:+, prueba}${SELF:+, solo chat propio}" ;;

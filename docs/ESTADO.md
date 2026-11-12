@@ -354,6 +354,14 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
     entrega se cobra en la línea de la puerta de enlace (si se cobra, se quita), una
     falla real sin señal y `SmsSend` en Android 8.1 (Core 2, la reflexión cambia de
     firma entre versiones).
+  - Aviso de 14 días: el filtro del motor deja pasar los mensajes propios enviados desde
+    el principal (`"from_me":true,"device":0`) y el puente guarda su hora en
+    `sms-bridge-main` (junto al script; si no existe, cuenta desde el primer arranque).
+    Desde el día 12, la siguiente respuesta pedida (la que pasa por `pre`: menús, `n`,
+    `gn`, `00`, `[NO SE ENVIO]`) empieza con `[ABRE WHATSAPP]`, una vez al día. Al
+    arrancar, la terminal muestra hace cuántos días se usó el principal. Probado con el
+    motor falso: aviso en el primer menú y no en el segundo; un mensaje propio del
+    dispositivo 3 no cuenta; uno del dispositivo 0 actualiza la hora.
 - Llamadas: 2 de 4 no llegaron al módem (sin `MSG_INCOMING_CALL_IND` en el registro
   de radio; el iPhone mostró "Llamada finalizada" enseguida). Pasó con y sin el
   puente: parece intermitente, de la red.
@@ -364,7 +372,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   respuesta, con el logo; `[AYUDA]` hasta 160, con el logo; `[PIE]` hasta 25, última
   línea del menú; `[OK]` hasta 10, va con el nombre; `[NO SE ENVIO]` hasta 25, con
   el nombre; `[SIN NUEVOS]` hasta 25, con el nombre; `[SESION CERRADA]` hasta 60;
-  `Yo` hasta 8.
+  `Yo` hasta 8; `[ABRE WHATSAPP]` hasta 35, primera línea (después de la bienvenida).
 - En el Fame quedan `sms-bridge.sh`, `player.jar` y el marcador de bienvenida
   `sms-bridge-993359016`. `sms-test.sh`, `sms-test.log` y los registros del puente
   se borraron.
