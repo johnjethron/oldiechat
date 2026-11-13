@@ -408,7 +408,56 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
   - Probado con `-t -s`, SMS falsos (borrados) y el motor falso: bienvenida, ayuda
     completa, sin la última línea y sin logo, menú lleno sin logo, desempate, número,
     grupos, `gn`, `00`, no enviado y sesión cerrada. No se probó con nombres reales.
-- En el Fame quedan `sms-bridge.sh`, `player.jar` y el marcador de bienvenida
+- Etapa 3, lo que no depende de la app (13 de noviembre de 2026, modo sin preguntas; los
+  puntos 0 a 5 del pedido ya estaban hechos y con commit desde el 8 y el 11 de noviembre).
+  - Registro del dueño (`54313b2`): sin número en la orden, el puente usa el registrado en
+    `sms-bridge-owner` (junto al script). Si no hay, muestra `[CODIGO] NNNN` (4 dígitos al
+    azar, 1000 a 9999) y la parte root (`--reg`) espera cada 2 s un SMS cuyo texto sea
+    exactamente el código, llegado después de mostrarlo; el número que lo envía queda
+    guardado y se borra su marcador de bienvenida, así su primer pedido la recibe. Al
+    código no se responde (0 SMS de la puerta de enlace). Para cambiar de dueño se borra
+    `sms-bridge-owner`. Marcador nuevo para el dueño: `T_COD` (`[CODIGO]`, máx. 40, texto de
+    la pantalla de la puerta de enlace, va seguido del código).
+  - Decisiones tomadas sin preguntar (todas se revierten con un commit):
+    1. El número en la orden sigue aceptado y no se guarda: sirve para pruebas y no costó
+       líneas.
+    2. El número se guarda como lo entrega la red (en Chile llega con `+56`). Si llegara
+       sin `+56`, `SmsSend` y `-s` usarían ese número sin prefijo; no se normaliza porque
+       no se pudo ver un caso real sin SMS reales.
+    3. El código no vence ni limita intentos: el registro solo está abierto mientras la
+       pantalla muestra el código. Si el dueño quiere tope de intentos, es un cambio aparte.
+    4. Esto cambia la sección 3 de `SMS_BRIDGE.md` (antes: el número nunca por SMS); el
+       pedido de la etapa 3 lo define así y el documento quedó actualizado.
+    5. `rm` de Android 4.1 no acepta `-f`: se usa `rm` con el error descartado.
+  - Bienvenida: no necesitó código. El primer pedido respondido trae el logo de 2 filas y
+    el mensaje de entrada arriba, en el mismo SMS (con un menú de 3 chats: 116 septetos).
+    Sin cambiar desde el 11/11: si el primer pedido es `a`, la ayuda (158) ya trae el logo
+    y el mensaje de entrada no se envía nunca, porque no cabe; y si el primer pedido es un
+    texto que sale bien, la bienvenida va en la siguiente respuesta. Queda a decisión del
+    dueño si el mensaje de entrada debe esperar a la siguiente respuesta después de `a`.
+  - Revisión de palabras, orden y costo (sin cambios en `sms-bridge.sh`; los textos son del
+    dueño). Igual que la terminal: etiquetas de adjuntos y `audio mm.ss` (salen del motor),
+    mensajes del más antiguo al más nuevo, chats del más reciente al más antiguo, tecla
+    primero y palabra después (como la guía), `Enviado a` / `No se pudo enviar a` (la guía
+    dice `enviar`). Distinto de la terminal, para decisión del dueño: (1) `ayuda` en el SMS
+    y `guía` en la terminal; (2) `Yo` en el SMS y `You` en la terminal (nchat sin traducir);
+    (3) no leídos como `(k)` en el SMS y como marca y color en la terminal. Costo: toda
+    respuesta pedida cabe en 1 SMS (menú, `n`, `gn`, ayuda, errores), el logo y la
+    bienvenida solo van si caben en ese mismo SMS, no hay saltos de línea ni espacios al
+    final, y nombres y textos pasan por el filtro GSM del motor. Único caso de más de 1
+    SMS: una tanda del modo conversación (hasta 3 partes). Dato para decidir: en `n` y en
+    conversación cada línea repite el nombre de la persona (hasta 10 septetos por línea);
+    quitarlo en chats de personas ahorraría caracteres, pero cambia la sección 6 del diseño.
+  - `SMS_BRIDGE.md` puesto al día con el código: registro por código (sección 3), etiquetas
+    de adjuntos, texto del aviso de 14 días, textos de errores, logo si cabe. Del diseño
+    siguen sin programar: `Sin internet desde HH:MM` con envío pendiente, `Quedan N SMS` y
+    los pendientes de más de 10 minutos al abrir.
+  - Probado en el Fame con `-t -s`, motor falso y SMS falsos del número `+56900000001`
+    (borrados, `_id` > 87): un código equivocado de otro número se ignora; el código
+    correcto registra; el primer pedido trae la bienvenida aunque el marcador existiera;
+    al reiniciar sin número usa el registrado y no pide código; `0`, `a`, `1` y `g`
+    responden igual que antes. Ningún SMS real y ningún envío por WhatsApp.
+- En el Fame quedan `sms-bridge.sh` (versión del 13/11), `player.jar` y el marcador de bienvenida
   `sms-bridge-993359016`. `sms-test.sh`, `sms-test.log` y los registros del puente
   se borraron.
 
@@ -483,8 +532,21 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - Falta probar con saldo: envío real con `-s`, si el informe de entrega se cobra, falla
   real sin señal y `SmsSend` en Android 8.1.
 
+## Cierre del 13 de noviembre de 2026
+
+- Rama actual `sms`, árbol limpio, sin subir: Área 5, etapa 3, puntos 6 a 8 (registro del
+  dueño, bienvenida y revisión de textos), solo en `sms-bridge.sh`. `main` sigue en `7aa7761`.
+- Nada que compilar: no se tocó el motor ni `player/`.
+- Fame: `sms-bridge.sh` del 13/11 en `/data/local/tmp/`, sin `sms-bridge-owner` (el dueño
+  real no está registrado: el primer arranque sin número mostrará un código). SMS falsos y
+  `ft/` borrados; motor y puente detenidos. Core 2 sin tocar.
+- Falta: el texto de `T_COD`; las decisiones anotadas en la etapa 3 (Área 5); y, con saldo,
+  un registro real (ver cómo entrega la red el número) además de lo pendiente del 11/11.
+
 ## Qué sigue
 
+- Área 5, etapa 3: hecho lo que no depende de la app (puntos 6 a 8); el resto de la etapa
+  espera a la app.
 - Área 5, etapa 2b: partes 1 y 2 hechas. Decisión pendiente del dueño: la propuesta para
   que no se pierdan los mensajes que no caben (orden `seen` en el motor; sección Área 5),
   y si `gn` entrega lo pendiente de a poco o sigue con los 3 últimos. Se trabaja en

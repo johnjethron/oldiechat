@@ -1,7 +1,8 @@
 # Puente SMS (diseño)
 
-Área 5, etapa 1. Solo diseño: nada de esto está programado. Base: la prueba de la
-etapa 0 (`scripts/sms-test.sh` y `player/src/cl/oldiechat/sms/SmsSend.java`).
+Área 5, etapa 1. Diseño; el prototipo con root es `scripts/sms-bridge.sh` y lo que ya
+está programado se detalla en `docs/ESTADO.md` (Área 5). Los textos exactos de los SMS
+son los de `sms-bridge.sh` (los escribe el dueño).
 
 Palabras: **dueño** es quien usa el teléfono básico; **puerta de enlace** es el
 Android con OldieChat App abierto en modo SMS y una línea propia.
@@ -61,7 +62,10 @@ externo. OldieChat no tiene servidor: el motor habla con WhatsApp y la app con l
 
 ## 3. Seguridad
 
-- El número del dueño se configura solo en la pantalla de la puerta de enlace, nunca por SMS.
+- Registro del dueño (etapa 3): la pantalla de la puerta de enlace muestra un código de 4
+  dígitos; el número que lo envía por SMS queda como dueño. No se responde al código: el
+  primer pedido recibe la bienvenida. Solo cuenta un SMS llegado después de mostrar el
+  código; para cambiar de dueño se borra el registro en la puerta de enlace.
 - Se comparan los últimos 9 dígitos (con o sin +56).
 - Todo SMS o llamada de otro número se ignora en silencio: no se responde ni se registra el contenido.
 - Las respuestas van siempre al número configurado, no al remitente: quien falsifique
@@ -115,7 +119,7 @@ Reglas:
   comillas tipográficas y `…` pasan a simples y `..`. Un solo carácter fuera de GSM
   baja el SMS a 70 caracteres.
 - Mensajes largos en modo conversación: hasta 3 partes y `..` al cortar.
-- Adjuntos: etiqueta corta (`[foto]`, `[audio 0:12]`, `[doc]`) y su texto si tiene.
+- Adjuntos: las etiquetas de la terminal (`imagen N KB`, `audio mm.ss`, `documento pdf N KB`) y su texto si tiene.
 - Silencio si sale bien. Llamada perdida = menú, gratis para el dueño.
 - Cada parte cuenta como un SMS en la cuota.
 
@@ -155,7 +159,7 @@ principal: whatsmeow no recibe ese dato. Forma más simple:
 - (a) Señal: un mensaje enviado desde el principal (dispositivo 0 de la cuenta del
   dueño); basta escribirse a sí mismo. A confirmar en el motor (Área 1, etapa 7).
 - (b) Señal: el dueño abre WhatsApp desde una tecla de la pantalla de OldieChat; la app lo sabe.
-- Desde el día 12 agrega `Abre WhatsApp en el principal` a la siguiente respuesta pedida.
+- Desde el día 12 agrega `Abre WhatsApp o la sesion se cierra` a la siguiente respuesta pedida, una vez al día.
 - Si WhatsApp cierra la sesión: ver 10.
 
 Caso (b), convivencia:
@@ -173,9 +177,9 @@ Una línea, solo cuando el dueño pidió algo:
 | Falla | Recibe el dueño |
 | --- | --- |
 | Sin wifi o sin internet | `Sin internet desde HH:MM`. Lo que escribió queda pendiente y se envía al volver (solo mientras está abierta). |
-| Sesión cerrada por WhatsApp | `Sesion cerrada. Vincula de nuevo.` Deja de atender hasta vincular. |
-| WhatsApp rechazó un envío | `No se envio a Nombre` |
-| Comando no entendido o sin destinatario | `a ayuda  0 menu` |
+| Sesión cerrada por WhatsApp | `Sesion cerrada. Abre tu sesion en la app :)` Deja de atender hasta vincular. |
+| WhatsApp rechazó un envío | `No se pudo enviar a Nombre` |
+| Comando no entendido o sin destinatario | el menú |
 | Sin red de SMS en la puerta de enlace | Nada: no puede responder. Reintenta una vez al minuto y lo muestra en su pantalla. |
 | Puerta de enlace cerrada o apagada | Nada. La llamada no suena si está apagada. |
 
@@ -204,8 +208,9 @@ Una línea, solo cuando el dueño pidió algo:
 - Unas 18 a 20 columnas y 5 a 7 líneas: un SMS completo ocupa más de una pantalla.
 - Lo importante primero: nombre al inicio, un mensaje por línea.
 - Líneas del menú cortas: `n Nombre (k)`.
-- El logo de 2 filas (26 caracteres) va solo en la bienvenida y en la ayuda (`a`).
-  Bienvenida: la respuesta al primer pedido después de configurar el número del dueño.
+- El logo de 2 filas (26 septetos) va siempre en la bienvenida y en la ayuda (`a`); en las
+  demás respuestas pedidas, solo si cabe en el mismo SMS.
+  Bienvenida: la respuesta al primer pedido después de registrar el número del dueño.
 
 ## 14. Teléfono cliente
 
