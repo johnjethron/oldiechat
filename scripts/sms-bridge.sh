@@ -189,23 +189,25 @@ menu() {  # hasta 9 chats de tipo $1 (prefijo $2) en 1 SMS; los números quedan 
 }
 
 msgs() {  # mensajes nuevos del chat $1 en $2 1..n (del más antiguo al más nuevo);
-          # quien escribe: el nombre de pila de $3, o en grupos ($3 vacío) el de cada mensaje; $4: sin los propios
+          # persona ($3 con su nombre): las líneas de ella van sin nombre y las mías con "Yo:"; grupo ($3 vacío): cada línea
+          # lleva el nombre de quien escribe; $4: sin los propios
   ask "{\"cmd\":\"messages\",\"chat\":\"$1\"}" messages
   J=${R#*'"messages":['}; n=0
   while :; do
     case $J in *'{"type":"message"'*) ;; *) break ;; esac
     J=${J#*'{"type":"message"'}; o=${J%%'{"type":"message"'*}
     case $o in *'"from_me":true'*) [ -n "$4" ] && continue; who=$T_YO ;; *)
-      who=$3; [ -n "$who" ] || { val name "$o"; who=$v; }
-      [ -n "$who" ] || { val sender "$o"; who=${v%%[@:]*}; }
-      short "$who"; who=$x ;;
+      who=; [ -z "$3" ] && {
+        val name "$o"; who=$v; [ -n "$who" ] || { val sender "$o"; who=${v%%[@:]*}; }
+        short "$who"; who=$x; } ;;
     esac
     val text "$o"
     case $o in *'"audio":true'*)
       x=${o#*'"seconds":'}; x=${x%%[!0-9]*}; x=${x:-0}; mm=$((x / 60)) ss=$((x % 60))
       [ $mm -lt 10 ] && mm=0$mm; [ $ss -lt 10 ] && ss=0$ss; v="audio $mm.$ss" ;;
     esac
-    n=$((n + 1)); eval "$2$n=\"\$who: \$v\""
+    l=$v; [ -n "$who" ] && l="$who: $v"; [ -n "$l" ] || continue
+    n=$((n + 1)); eval "$2$n=\$l"
   done
 }
 
@@ -227,7 +229,7 @@ open() {  # mensajes nuevos de la persona $1 en 1 SMS, los más recientes
   lastc=$ch lastw=$w conv=1 convq=$own
   msgs "$ch" M "$w"; pre
   [ $n -gt 0 ] || { say "$p$T_NADA: $w" l; return; }
-  pack M $n 99; say "$p$t" l
+  p="$p$w$nl"; pack M $n 99; say "$p$t" l   # el nombre una sola vez, arriba
 }
 
 group() {  # los últimos 3 mensajes nuevos del grupo $1 en 1 SMS, con quien escribe
@@ -263,7 +265,7 @@ tick() {  # cada 2 s: reintento del SMS que no salió (cada minuto, hasta 10 min
   [ $((now - own)) -ge 600 ] && { conv=; log "fin del modo conversación"; return; }
   [ $((now - convq)) -ge 20 ] || return; convq=$now
   msgs "$lastc" M "$lastw" 1; [ $n -gt 0 ] || return
-  p=; pack M $n 99 459; say "$t"   # hasta 3 partes de 153
+  p="$lastw$nl"; pack M $n 99 459; say "$p$t"   # hasta 3 partes de 153, con el nombre arriba
 }
 
 cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
