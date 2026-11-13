@@ -552,15 +552,20 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 
 ## Cierre del 13 de noviembre de 2026
 
-- Rama actual `sms`, árbol limpio, sin subir: Área 5, etapa 3, puntos 6 a 8 (registro del
-  dueño, bienvenida y revisión de textos), solo en `sms-bridge.sh`. `main` sigue en `7aa7761`.
-- Nada que compilar: no se tocó el motor ni `player/`.
-- Fame: `sms-bridge.sh` del 13/11 (con el visto bueno) en `/data/local/tmp/`, sin `sms-bridge-owner` (el dueño
-  real no está registrado: el primer arranque sin número mostrará un código). SMS falsos y
-  `ft/` borrados; motor y puente detenidos. Core 2 sin tocar.
-- Falta: las decisiones anotadas en la etapa 3 (Área 5) que no cubrió el visto bueno del 13/11 (el
-  `ayuda` y `You`/`Yo` frente a la terminal; `(k)`); y, con saldo,
-  un registro real (ver cómo entrega la red el número) además de lo pendiente del 11/11.
+- Rama actual `sms`, árbol limpio, sin subir: Área 5, etapa 3 (registro del dueño, bienvenida,
+  revisión de textos) y el visto bueno del 13/11 (bienvenida pendiente tras `a`, nombre una
+  sola vez en chats de personas, `Quedan N SMS` descartado, `T_COD`), todo en `sms-bridge.sh`
+  y `SMS_BRIDGE.md`. Último commit de código: `1481c39`. `main` sigue en `7aa7761`.
+- Nada que compilar: no se tocó el motor ni `player/`. Probado con SMS falsos, `-t -s` y motor falso.
+- Fame: `sms-bridge.sh` de `1481c39` y `player.jar` en `/data/local/tmp/`; sin `sms-bridge-owner`
+  (el primer arranque sin número muestra `Envia esta clave OldieChat por SMS:` y un código);
+  queda el marcador viejo `sms-bridge-993359016` (el registro borra el del número nuevo). SMS
+  falsos (`_id` > 87) y `ft/` borrados; motor y puente detenidos. Core 2 sin tocar.
+- Falta decidir: `ayuda` y `You`/`Yo` frente a la terminal, `(k)` en el menú, la orden `seen`
+  del motor (mensajes que no caben) y `gn` de a poco.
+- Falta probar con saldo: registro real (cómo entrega la red el número), envío real con `-s`,
+  informe de entrega (¿se cobra?), falla sin señal y `SmsSend` en Android 8.1.
+- Sin programar del diseño: `Sin internet desde HH:MM` y los pendientes de más de 10 minutos al abrir.
 
 ## Qué sigue
 
