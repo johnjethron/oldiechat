@@ -34,7 +34,7 @@ T_NADA='Nada nuevo'             # + ": nombre"
 T_SESION='Sesion cerrada. Abre tu sesion en la app :)'
 T_MAIN='Abre WhatsApp o la sesion se cierra'
 T_YO='Yo'
-T_COD='[CODIGO]'                # marcador, máx. 40; pantalla de la puerta de enlace, + código
+T_COD='Envia esta clave OldieChat por SMS:'   # 35; pantalla de la puerta de enlace, + código
 
 set -fU
 [ "$1" = --poll ] && { POLL=$2; shift 2; }   # parte root, ver abajo
