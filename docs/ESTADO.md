@@ -416,8 +416,8 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
     exactamente el código, llegado después de mostrarlo; el número que lo envía queda
     guardado y se borra su marcador de bienvenida, así su primer pedido la recibe. Al
     código no se responde (0 SMS de la puerta de enlace). Para cambiar de dueño se borra
-    `sms-bridge-owner`. Marcador nuevo para el dueño: `T_COD` (`[CODIGO]`, máx. 40, texto de
-    la pantalla de la puerta de enlace, va seguido del código).
+    `sms-bridge-owner`. Marcador nuevo para el dueño: `T_COD` (texto de la pantalla de la
+    puerta de enlace, va seguido del código; ver "visto bueno del 13/11" abajo).
   - Decisiones tomadas sin preguntar (todas se revierten con un commit):
     1. El número en la orden sigue aceptado y no se guarda: sirve para pruebas y no costó
        líneas.
@@ -431,10 +431,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
     5. `rm` de Android 4.1 no acepta `-f`: se usa `rm` con el error descartado.
   - Bienvenida: no necesitó código. El primer pedido respondido trae el logo de 2 filas y
     el mensaje de entrada arriba, en el mismo SMS (con un menú de 3 chats: 116 septetos).
-    Sin cambiar desde el 11/11: si el primer pedido es `a`, la ayuda (158) ya trae el logo
-    y el mensaje de entrada no se envía nunca, porque no cabe; y si el primer pedido es un
-    texto que sale bien, la bienvenida va en la siguiente respuesta. Queda a decisión del
-    dueño si el mensaje de entrada debe esperar a la siguiente respuesta después de `a`.
+    (Cambiado con el visto bueno del 13/11, ver abajo: tras `a` la bienvenida espera.)
   - Revisión de palabras, orden y costo (sin cambios en `sms-bridge.sh`; los textos son del
     dueño). Igual que la terminal: etiquetas de adjuntos y `audio mm.ss` (salen del motor),
     mensajes del más antiguo al más nuevo, chats del más reciente al más antiguo, tecla
@@ -457,6 +454,27 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
     correcto registra; el primer pedido trae la bienvenida aunque el marcador existiera;
     al reiniciar sin número usa el registrado y no pide código; `0`, `a`, `1` y `g`
     responden igual que antes. Ningún SMS real y ningún envío por WhatsApp.
+  - Visto bueno del dueño, 13 de noviembre de 2026 (4 puntos, un commit por punto, modo sin
+    preguntas):
+    1. `T_COD` = `Envia esta clave OldieChat por SMS:` (35).
+    2. `Quedan N SMS` descartado y borrado de `SMS_BRIDGE.md` (también la frase "avisa cuando
+       quedan 50" del texto de cuota para el README, decisión mía).
+    3. Bienvenida: ahora la agrega `say` en el primer pedido donde cabe en 160 septetos
+       (junto con el logo, que ya viene en ella) y solo entonces se marca como enviada
+       (`sms-bridge-<9 dígitos>`). Si el primer pedido es `a`, la ayuda va sola y la
+       bienvenida queda para el siguiente pedido donde quepa; sin SMS extra. Ya no se corta
+       la lista de un menú por la bienvenida: si no cabe, no va. Probado: `a`, `0`, `0`: ayuda
+       (158), menú con bienvenida (116), menú sin ella (87).
+    4. Chats de personas (`n`, modo conversación): el primer nombre (hasta 8 letras) va una
+       sola vez arriba; sus líneas sin nombre y las mías con `Yo:`; grupos igual que antes.
+       Probado con un chat falso de 5 mensajes (4 de la persona y 1 mío): `n` pasó de 117 a
+       101 septetos, 16 menos; con los 5 de la persona (modo conversación) el ahorro sería
+       k×(L+2) − (L+1) = 5×5 − 4 = 21 con un nombre de 3 letras, y 5×10 − 9 = 41 con uno de
+       8. La tanda en conversación (propios filtrados) midió 56. Decisiones: (a) arriba va
+       solo el primer nombre, no el desempate `Ana P` del menú; (b) una línea que queda
+       vacía se salta; (c) cada SMS de conversación lleva el nombre arriba, aunque lleguen
+       varios seguidos; (d) si un mensaje de grupo no trae ni nombre ni número, su línea
+       queda sin nombre.
 - En el Fame quedan `sms-bridge.sh` (versión del 13/11), `player.jar` y el marcador de bienvenida
   `sms-bridge-993359016`. `sms-test.sh`, `sms-test.log` y los registros del puente
   se borraron.
@@ -537,10 +555,11 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
 - Rama actual `sms`, árbol limpio, sin subir: Área 5, etapa 3, puntos 6 a 8 (registro del
   dueño, bienvenida y revisión de textos), solo en `sms-bridge.sh`. `main` sigue en `7aa7761`.
 - Nada que compilar: no se tocó el motor ni `player/`.
-- Fame: `sms-bridge.sh` del 13/11 en `/data/local/tmp/`, sin `sms-bridge-owner` (el dueño
+- Fame: `sms-bridge.sh` del 13/11 (con el visto bueno) en `/data/local/tmp/`, sin `sms-bridge-owner` (el dueño
   real no está registrado: el primer arranque sin número mostrará un código). SMS falsos y
   `ft/` borrados; motor y puente detenidos. Core 2 sin tocar.
-- Falta: el texto de `T_COD`; las decisiones anotadas en la etapa 3 (Área 5); y, con saldo,
+- Falta: las decisiones anotadas en la etapa 3 (Área 5) que no cubrió el visto bueno del 13/11 (el
+  `ayuda` y `You`/`Yo` frente a la terminal; `(k)`); y, con saldo,
   un registro real (ver cómo entrega la red el número) además de lo pendiente del 11/11.
 
 ## Qué sigue

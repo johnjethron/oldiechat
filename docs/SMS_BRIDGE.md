@@ -89,7 +89,9 @@ externo. OldieChat no tiene servidor: el motor habla con WhatsApp y la app con l
 ## 6. Un solo hilo
 
 - Todo llega del número de la puerta de enlace, en un solo hilo del teléfono básico.
-- Cada mensaje reenviado empieza con el nombre de pila de quien escribe (hasta 8 letras).
+- Persona (`n` y modo conversación): el SMS lleva arriba una sola vez el nombre de pila (hasta 8
+  letras, con la inicial del apellido si dos chats quedan iguales); sus líneas van sin nombre y
+  las mías con `Yo:`. Grupo (`gn`): cada línea lleva el nombre de quien escribe.
 - `n texto`: envía a la persona n del último menú.
 - `texto` sin número: va a la última persona que el dueño abrió o a quien escribió.
 - Los números del menú quedan fijos hasta que el dueño pide un menú nuevo.
@@ -140,7 +142,7 @@ de enlace. Uso normal: 500 SMS en cada una. Uso intenso: 1.000 en cada una.
 | --- | --- |
 | Hablas con un menú | Los mensajes llegan con el nombre y se responden escribiendo; el menú aparece solo si se pide. |
 | Cada paso cuesta | Llamada perdida gratis, silencio si sale bien, empaquetar. |
-| Todo llega del mismo número | Nombre al inicio de cada mensaje; el README pide guardar el número como "WhatsApp". |
+| Todo llega del mismo número | Nombre arriba de cada SMS; el README pide guardar el número como "WhatsApp". |
 | Esperas sin saber | Todo error se responde; la llamada suena si la puerta de enlace tiene señal; si no llega el menú en 1 minuto, está cerrada o sin red (README). |
 | Hay que recordar comandos | 4 formas: número, texto, `g` y `a`; la última línea del menú las recuerda; `a` cabe en 1 SMS y se puede guardar como plantilla. |
 
@@ -209,7 +211,8 @@ Una línea, solo cuando el dueño pidió algo:
 - Líneas del menú cortas: `n Nombre (k)`.
 - El logo de 2 filas (26 septetos) va siempre en la bienvenida y en la ayuda (`a`); en las
   demás respuestas pedidas, solo si cabe en el mismo SMS.
-  Bienvenida: la respuesta al primer pedido después de registrar el número del dueño.
+  Bienvenida: va arriba en el primer pedido, después de registrar el número del dueño, en que
+  cabe en el mismo SMS; si ese pedido es `a`, queda para el siguiente donde quepa (sin SMS extra).
 
 ## 14. Teléfono cliente
 

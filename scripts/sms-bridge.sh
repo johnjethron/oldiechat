@@ -229,7 +229,7 @@ open() {  # mensajes nuevos de la persona $1 en 1 SMS, los más recientes
   lastc=$ch lastw=$w conv=1 convq=$own
   msgs "$ch" M "$w"; pre
   [ $n -gt 0 ] || { say "$p$T_NADA: $w" l; return; }
-  p="$p$w$nl"; pack M $n 99; say "$p$t" l   # el nombre una sola vez, arriba
+  short "$w"; p="$p$x$nl"; pack M $n 99; say "$p$t" l   # el primer nombre una sola vez, arriba
 }
 
 group() {  # los últimos 3 mensajes nuevos del grupo $1 en 1 SMS, con quien escribe
@@ -265,7 +265,7 @@ tick() {  # cada 2 s: reintento del SMS que no salió (cada minuto, hasta 10 min
   [ $((now - own)) -ge 600 ] && { conv=; log "fin del modo conversación"; return; }
   [ $((now - convq)) -ge 20 ] || return; convq=$now
   msgs "$lastc" M "$lastw" 1; [ $n -gt 0 ] || return
-  p="$lastw$nl"; pack M $n 99 459; say "$p$t"   # hasta 3 partes de 153, con el nombre arriba
+  short "$lastw"; p="$x$nl"; pack M $n 99 459; say "$p$t"   # hasta 3 partes de 153, con el nombre arriba
 }
 
 cmd() {  # atiende un SMS del dueño ($1); vacío = llamada perdida
