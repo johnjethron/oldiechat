@@ -4,7 +4,9 @@
 # Va en el teléfono junto a player.jar (player/build.sh); el motor ya vinculado
 # está en /data/local/tmp/oldiechat-engine/. Se ejecuta a mano como shell (sin root):
 #   adb push scripts/sms-bridge.sh <player.jar> /data/local/tmp/
-#   adb shell sh /data/local/tmp/sms-bridge.sh [-t] [-s] <número del dueño con +56>
+#   adb shell sh /data/local/tmp/sms-bridge.sh [-t] [-s] [número del dueño con +56]
+#   sin número usa el registrado (sms-bridge-owner); si no hay, muestra un código de 4
+#   dígitos y el número que lo envía por SMS queda como dueño (se borra el archivo para cambiarlo)
 #   -t  no envía SMS: los escribe en sms-bridge.log con su largo en septetos
 #   -s  todo envío por WhatsApp va al chat propio del dueño (Saved Messages)
 # El motor corre como shell: su 2000 lo deja sin el grupo inet y sin red. Root (un
@@ -32,16 +34,16 @@ T_NADA='Nada nuevo'             # + ": nombre"
 T_SESION='Sesion cerrada. Abre tu sesion en la app :)'
 T_MAIN='Abre WhatsApp o la sesion se cierra'
 T_YO='Yo'
+T_COD='[CODIGO]'                # marcador, máx. 40; pantalla de la puerta de enlace, + código
 
 set -fU
 [ "$1" = --poll ] && { POLL=$2; shift 2; }   # parte root, ver abajo
+[ "$1" = --reg ] && { REG=$2; shift 2; }     # parte root del registro: código que se espera
 while :; do case $1 in -t) TEST=1; shift ;; -s) SELF=1; shift ;; *) break ;; esac; done
-NUM="${1:?uso: sms-bridge.sh [-t] [-s] <número>}"
+NUM=$1
 D="${0%/*}"; LOG="$D/sms-bridge.log"; E=/data/local/tmp/oldiechat-engine
 TMPDIR=/data/local/tmp
-N9=${NUM#"${NUM%?????????}"}          # se comparan los últimos 9 dígitos
-ME="${NUM#+}@s.whatsapp.net"          # chat propio, para -s
-HELLO="$D/sms-bridge-$N9"             # existe si ya se envió la bienvenida
+OWNER="$D/sms-bridge-owner"           # número del dueño registrado
 SENT="$D/sms-bridge-sent"             # horas de los SMS de la última hora (límite de 30)
 MAIN="$D/sms-bridge-main"             # hora del último mensaje enviado desde el principal (aviso de 14 días)
 bs='\' nl='
@@ -50,6 +52,24 @@ log() { print -r -- "$(date '+%H:%M:%S') $*" >> "$LOG"; }
 
 q() { content query --uri "$1" --projection "$2" --where "$3" --sort "_id ASC"; }
 top() { content query --uri "$1" --projection _id --sort "_id DESC" | while read -r l; do l=${l#*_id=}; print -r -- "${l%%,*}"; break; done; }
+
+if [ -n "$REG" ]; then  # root: espera un SMS con el código y escribe el número que lo envió
+  ls=$(top content://sms/inbox)
+  while [ -d /proc/$POLL ]; do
+    r=$(q content://sms/inbox address "_id>${ls:-0} AND body='$REG'")
+    case $r in *address=*) print -r -- "${r##*address=}"; exit ;; esac; sleep 2
+  done; exit
+fi
+[ -n "$NUM" ] || [ ! -e "$OWNER" ] || read -r NUM < "$OWNER"
+if [ -z "$NUM" ]; then  # registro del dueño
+  REG=$((RANDOM % 9000 + 1000)); echo "$T_COD $REG"
+  NUM=$(su -c "sh $0 --poll $$ --reg $REG" </dev/null); [ -n "$NUM" ] || exit 1
+  print -r -- "$NUM" > "$OWNER"
+fi
+N9=${NUM#"${NUM%?????????}"}          # se comparan los últimos 9 dígitos
+ME="${NUM#+}@s.whatsapp.net"          # chat propio, para -s
+HELLO="$D/sms-bridge-$N9"             # existe si ya se envió la bienvenida
+[ -n "$REG" ] && rm "$HELLO" 2>/dev/null # dueño recién registrado: su primer pedido recibe la bienvenida
 
 if [ -n "$POLL" ]; then  # root: cada 2 s escribe "llamada <_id>" o "sms <_id> <texto>"; termina con el script
   # SmsSend sin argumentos solo crea la caché dex de player.jar, que el uid 1001 no puede escribir
