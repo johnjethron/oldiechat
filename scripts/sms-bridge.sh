@@ -120,8 +120,8 @@ sept() {  # septetos GSM de $1 en s: los caracteres extendidos valen 2
   typeset e y; s=${#1}; for e in '^' '{' '}' '[' ']' '~' '|' '€' "$bs"; do y=${1//"$e"/}; s=$((s + ${#1} - ${#y})); done
 }
 
-pre() {  # inicio de la respuesta pedida: la bienvenida (una vez) y, desde el día 12 sin usar el principal, el aviso (una vez al día)
-  p=; [ -e "$HELLO" ] || p="$T_BIENV$nl"; now=$(date +%s)
+pre() {  # inicio de la respuesta pedida: desde el día 12 sin usar el principal, el aviso (una vez al día)
+  p=; now=$(date +%s)
   [ $((now - mt)) -ge 1036800 ] && [ $((now - warned)) -ge 86400 ] && { warned=$now; p="$p$T_MAIN$nl"; }
 }
 
@@ -132,12 +132,15 @@ short() {  # en x, el nombre de pila de $1 hasta 8 letras (un número queda ente
 }
 
 say() {  # envía $1 al dueño (siempre a NUM), con el límite de 30 por hora; si no sale, queda en pend
-          # $2: lleva el logo arriba si cabe en el mismo SMS
-  [ -n "$2" ] && case $1 in "$LOGO"*) ;; *) sept "$LOGO$nl$1"; [ $s -le 160 ] && set -- "$LOGO$nl$1" ;; esac
+          # $2: lleva arriba la bienvenida (hasta que salga una vez) o, si no, el logo, solo si caben en el mismo SMS
+  if [ -n "$2" ]; then
+    [ -e "$HELLO" ] || { sept "$T_BIENV$nl$1"; [ $s -le 160 ] && set -- "$T_BIENV$nl$1"; }
+    case $1 in "$LOGO"*) ;; *) sept "$LOGO$nl$1"; [ $s -le 160 ] && set -- "$LOGO$nl$1" ;; esac
+  fi
   now=$(date +%s); k= n=0
   for x in $sent; do [ $((now - x)) -lt 3600 ] && { k="$k $x"; n=$((n + 1)); }; done; sent=$k
   [ $n -ge 30 ] && { log "límite de 30 SMS por hora: no se envió"; return; }
-  sept "$1"; : > "$HELLO"
+  sept "$1"; case $1 in *"$T_BIENV"*) : > "$HELLO" ;; esac
   if [ -n "$TEST" ]; then r=prueba; log "SMS septetos=$s: ${1//$nl/ | }"; else
     r=$(N="$NUM" T="$1" CLASSPATH="$D/player.jar" su 1001 -c 'app_process /system/bin cl.oldiechat.sms.SmsSend "$N" "$T"' </dev/null 2>>"$LOG")
     log "SMS septetos=$s: ${r//$nl/, }"
@@ -235,7 +238,7 @@ group() {  # los últimos 3 mensajes nuevos del grupo $1 en 1 SMS, con quien esc
 }
 
 help() {  # a: la ayuda con el logo; si con lo de arriba no cabe, sin la última línea y después sin el logo
-  : > "$HELLO"; ok; x=$T_AYUDA   # la ayuda ya trae el logo: sin bienvenida
+  ok; x=$T_AYUDA   # la ayuda ya trae el logo: la bienvenida queda para el siguiente pedido donde quepa
   sept "$p$x"; [ $s -gt 160 ] && { x=${x%"$nl"*}; sept "$p$x"; }
   [ $s -gt 160 ] && x=${x#"$LOGO$nl"}
   say "$p$x"
