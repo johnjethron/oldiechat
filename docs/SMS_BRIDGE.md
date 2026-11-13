@@ -132,8 +132,7 @@ Estimación mensual (30 días):
 | Intenso | el doble del normal | 900 | 780 |
 
 Son dos líneas con SMS: la del teléfono cliente (columna dueño) y la de la puerta
-de enlace. Uso normal: 500 SMS en cada una. Uso intenso: 1.000 en cada una. La puerta de enlace
-cuenta lo enviado en el mes y agrega `Quedan N SMS` en la respuesta pedida cuando quedan 50.
+de enlace. Uso normal: 500 SMS en cada una. Uso intenso: 1.000 en cada una.
 
 ## 8. Las 5 causas de "se siente raro"
 
@@ -233,7 +232,7 @@ enlace.
 
 **Cuota.** Revisar dos veces al día y conversar un rato usa unos 400 SMS al mes en cada
 línea: 500 alcanzan para un uso normal; un uso intenso necesita 1.000 en cada una. La
-llamada perdida para pedir el menú es gratis. La puerta de enlace avisa cuando quedan 50.
+llamada perdida para pedir el menú es gratis.
 
 **Puerta de enlace.** Queda en casa, enchufada y con la pantalla encendida: solo
 funciona mientras OldieChat está abierto en modo SMS.

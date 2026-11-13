@@ -450,7 +450,7 @@ github.com/johnjethron/oldiechat (lo publica el dueño, no Claude).
     quitarlo en chats de personas ahorraría caracteres, pero cambia la sección 6 del diseño.
   - `SMS_BRIDGE.md` puesto al día con el código: registro por código (sección 3), etiquetas
     de adjuntos, texto del aviso de 14 días, textos de errores, logo si cabe. Del diseño
-    siguen sin programar: `Sin internet desde HH:MM` con envío pendiente, `Quedan N SMS` y
+    siguen sin programar: `Sin internet desde HH:MM` con envío pendiente y
     los pendientes de más de 10 minutos al abrir.
   - Probado en el Fame con `-t -s`, motor falso y SMS falsos del número `+56900000001`
     (borrados, `_id` > 87): un código equivocado de otro número se ignora; el código
