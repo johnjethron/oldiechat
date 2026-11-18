@@ -1,6 +1,6 @@
 # OldieChat
 
-Al empezar, lee `docs/ESTADO.md` (qué está hecho y para qué sirve cada carpeta).
+Al empezar, lee `docs/ESTADO.md` (qué está hecho y para qué sirve cada carpeta) y `docs/PENDIENTES.md` (el plan: qué sigue, etapa por etapa).
 
 Proyecto: OldieChat (github.com/johnjethron/oldiechat). Cliente no oficial compatible con WhatsApp para teléfonos antiguos y dumbphones. Versión publicada: 0.2.3 (07-11-2026; terminal, basada en nchat y whatsmeow). En main: 0.2.4-dev, sin publicar.
 
